@@ -1,0 +1,14 @@
+# Module configuration
+module.tx_observermodule {
+    persistence {
+        storagePid = {$module.tx_observermodule.persistence.storagePid}
+    }
+    view {
+        templateRootPaths.0 = EXT:gs_monitor_observer/Resources/Private/Templates/
+        templateRootPaths.1 = {$module.tx_observermodule.view.templateRootPath}
+        partialRootPaths.0 = EXT:gs_monitor_observer/Resources/Private/Partials/
+        partialRootPaths.1 = {$module.tx_observermodule.view.partialRootPath}
+        layoutRootPaths.0 = EXT:gs_monitor_observer/Resources/Private/Layouts/
+        layoutRootPaths.1 = {$module.tx_observermodule.view.layoutRootPath}
+    }
+}

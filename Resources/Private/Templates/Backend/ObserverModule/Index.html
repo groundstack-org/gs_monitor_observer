@@ -1,0 +1,228 @@
+<html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers"
+    xmlns:hhcookie="http://typo3.org/ns/HauerHeinrich/TestModul/ViewHelpers" data-namespace-typo3-fluid="true">
+
+<f:layout name="Backend/Default" />
+
+<f:section name="content">
+    <h1>Index</h1>
+
+    <f:flashMessages />
+
+    <f:comment><f:debug title="fluid index template">{_all}</f:debug></f:comment>
+
+    <div class="monitor-observer">
+        <div class="needs-update-list">
+            <table>
+                <caption>Needs Update</caption>
+                <thead>
+                    <tr>
+                        <th scope="col">Domain</th>
+                        <th scope="col">New Version</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <f:for each="{needsUpdateList}" as="domain" key="label" iteration="i">
+                        <tr>
+                            <td data-label="Domain">
+                                {label}
+                            </td>
+                            <td data-label="New Version">
+                                {domain.toVersion}
+                            </td>
+                        </tr>
+                    </f:for>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="outdated-versions">
+            <f:comment>TODO: show newset LTS version</f:comment>
+            <table>
+                <caption>Outdated Versions</caption>
+                <thead>
+                    <tr>
+                        <th scope="col">Domain</th>
+                        <th scope="col">old Version</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <f:for each="{eltsList}" as="domain" key="label" iteration="i">
+                        <tr>
+                            <td data-label="Domain">
+                                {label}
+                            </td>
+                            <td data-label="New Version">
+                                {domain.installedVersion}
+                            </td>
+                        </tr>
+                    </f:for>
+                </tbody>
+            </table>
+        </div>
+
+        <f:comment>TODO: make accordion</f:comment>
+        <br><br><br><br>
+        <f:for each="{data}" as="domain" key="key">
+            <div class="enviroment">
+                <header>
+                    <a href="{key}" title="Call up the domain: {key}." target="_blank"><f:format.raw>{key}</f:format.raw></a>
+                    <a href="{key}/typo3" title="Call up the domain backend: {key}." target="_blank"><f:format.raw>Backend</f:format.raw></a>
+                </header>
+                <table>
+                    <caption>Enviroment</caption>
+                    <thead>
+                        <tr>
+                            <th scope="col">Platform</th>
+                            <th scope="col">Framework</th>
+                            <th scope="col">Current/New Version</th>
+                            <th scope="col">Newest LTS Version</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td data-label="Platform">
+                                <f:format.raw>{domain.runtime.platform}</f:format.raw> - <f:format.raw>
+                                    {domain.runtime.platform_version}</f:format.raw>
+                            </td>
+                            <td data-label="Framework">
+                                <f:format.raw>{domain.runtime.framework}</f:format.raw> - <f:format.raw>
+                                    {domain.runtime.framework_installed_version}</f:format.raw>
+                            </td>
+                            <td data-label="New Version" class="newest-version {f:if(condition: '{domain.runtime.elts}', then: 'error')} {f:if(condition: '{domain.runtime.update_necessary}', then: 'warning', else: '')}">
+                                <f:format.raw>{domain.runtime.newest_current_version}</f:format.raw>
+                            </td>
+                            <td data-label="New Version" class="newest-version {f:if(condition: '{domain.runtime.update_necessary} && {domain.runtime.elts}', then: 'error')}">
+                                <f:format.raw>{domain.runtime.framework_newest_version}</f:format.raw>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="extensions">
+                <table>
+                    <caption>Installed Extensions</caption>
+                    <thead>
+                        <tr>
+                            <th scope="col">Extension</th>
+                            <th scope="col">Version</th>
+                            <th scope="col">Current/New Version</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <f:for each="{domain.modules}" as="module" iteration="i">
+                            <tr>
+                                <td data-label="Extension">
+                                    <f:format.raw>{module.name}</f:format.raw>
+                                </td>
+                                <td data-label="Version">
+                                    <f:format.raw>{module.installed_version}</f:format.raw>
+                                </td>
+                                <td data-label="New Version">
+                                    <f:format.raw>{module.newest_version}</f:format.raw>
+                                </td>
+                            </tr>
+                        </f:for>
+                    </tbody>
+                </table>
+            </div>
+        </f:for>
+
+    </div>
+
+    <style>
+        /* https://codepen.io/AllThingsSmitty/pen/MyqmdM */
+        .monitor-observer table {
+            border: 1px solid #ccc;
+            border-collapse: collapse;
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            table-layout: fixed;
+        }
+
+        .monitor-observer table caption {
+            font-size: 1.5em;
+            margin: .5em 0 .75em;
+        }
+
+        .monitor-observer table tr {
+            background-color: #f8f8f8;
+            border: 1px solid #ddd;
+            padding: .35em;
+        }
+
+        .monitor-observer table th,
+        .monitor-observer table td {
+            padding: .625em;
+            text-align: center;
+        }
+
+        .monitor-observer table th {
+            font-size: .85em;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+        }
+
+        @media screen and (max-width: 600px) {
+            .monitor-observer table {
+                border: 0;
+            }
+
+            .monitor-observer table caption {
+                font-size: 1.3em;
+            }
+
+            .monitor-observer table thead {
+                border: none;
+                clip: rect(0 0 0 0);
+                height: 1px;
+                margin: -1px;
+                overflow: hidden;
+                padding: 0;
+                position: absolute;
+                width: 1px;
+            }
+
+            .monitor-observer table tr {
+                border-bottom: 3px solid #ddd;
+                display: block;
+                margin-bottom: .625em;
+            }
+
+            .monitor-observer table td {
+                border-bottom: 1px solid #ddd;
+                display: block;
+                font-size: .8em;
+                text-align: right;
+            }
+
+            .monitor-observer table td::before {
+                /**   
+                    aria-label has no advantage, it won't be read inside a table
+                    content: attr(aria-label);
+                */
+                content: attr(data-label);
+                float: left;
+                font-weight: bold;
+                text-transform: uppercase;
+            }
+
+            .monitor-observer table td:last-child {
+                border-bottom: 0;
+            }
+        }
+
+        /* Custom */
+        .monitor-observer table td.warning {
+            background-color: orange;
+        }
+
+        .monitor-observer table td.error {
+            background-color: red;
+        }
+
+    </style>
+</f:section>
+
+</html>
