@@ -3,6 +3,7 @@ namespace GroundStack\GsMonitorObserver\Controller\Backend;
 
 use \TYPO3\CMS\Extbase\Utility\DebuggerUtility;
 use \TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
+use \TYPO3\CMS\Extbase\Annotation\Inject;
 use \TYPO3\CMS\Core\Utility\GeneralUtility;
 use \TYPO3\CMS\Core\Database\ConnectionPool;
 use \TYPO3\CMS\Core\Messaging\FlashMessage;
@@ -10,6 +11,8 @@ use \TYPO3\CMS\Core\Messaging\FlashMessage;
 use \TYPO3\CMS\Extbase\Mvc\View\ViewInterface;
 use TYPO3\CMS\Core\Database\RelationHandler;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
+
+use GroundStack\GsMonitorObserver\Domain\Repository\DataRepository;
 
 /***
  *
@@ -26,6 +29,19 @@ class ObserverModuleController extends ActionController {
 
     protected $extensionKey;
     protected $extensionConfiguration;
+
+    /**
+     * Persistence Manager
+     * 
+     * @var \TYPO3\CMS\Extbase\Persistence\Generic\PersistenceManager
+     * @Inject
+     */
+    protected $persistenceManager;
+
+    /**
+     * @var DataRepository
+     */
+    protected $dataRepository = null;
 
     /**
      * Backend Template Container
@@ -55,20 +71,19 @@ class ObserverModuleController extends ActionController {
     }
 
     /**
+     * @param DataRepository $dataRepository
+     */
+    public function injectDataRepository(DataRepository $dataRepository) {
+        $this->dataRepository = $dataRepository;
+    }
+
+    /**
      * action show
      * 
      * @return void
      */
     public function indexAction() {
-
-        // DebuggerUtility::var_dump("index", "indexdebug");
-
-        $domains = [ // TODO: get infos from tx_gsmonitorobserver_domain_model_data
-            'domain' => [
-                'url' => 'https://www.austria-radreisen.at',
-                'apikey' => 'testings'
-            ]
-        ];
+        $domains = $this->dataRepository->findAll();
 
         $dataArray = [];
         $needsUpdateList = [];
@@ -76,9 +91,11 @@ class ObserverModuleController extends ActionController {
 
         foreach ($domains as $key => $value) {
             // get installed data
-            $dataArray[$value['url']] = json_decode(GeneralUtility::getURL($value['url'].'?eID=anxapi/v1/modules&access_token='.$value['apikey']), true);
+            $url = $value->getUrl();
+            $apiKey = $value->getApikey();
+            $dataArray[$url] = json_decode(GeneralUtility::getURL($url.'?eID=anxapi/v1/modules&access_token='.$apiKey), true);
 
-            $installedVersion = $dataArray[$value['url']]['runtime']['framework_installed_version'];
+            $installedVersion = $dataArray[$url]['runtime']['framework_installed_version'];
             $installedVersionSplit = explode('.', $installedVersion);
 
             // get the current/newes version of the installed version
@@ -86,21 +103,19 @@ class ObserverModuleController extends ActionController {
             $newestVersionData = json_decode(GeneralUtility::getURL('https://get.typo3.org/v1/api/major/'.$installedVersion[0].'/release/latest'), true);
             
             // check if newest verstion is higher than instelled version
-            $dataArray[$value['url']]['runtime']['newest_current_version'] = $newestVersionData['version'];
-            $dataArray[$value['url']]['runtime']['update_necessary'] = false;
+            $dataArray[$url]['runtime']['newest_current_version'] = $newestVersionData['version'];
+            $dataArray[$url]['runtime']['update_necessary'] = false;
             if (intval( str_replace('.', '', $installedVersion) ) < intval( str_replace('.', '', $newestVersionData['version']) )) {
-                $dataArray[$value['url']]['runtime']['update_necessary'] = true;
+                $dataArray[$url]['runtime']['update_necessary'] = true;
 
-                $needsUpdateList[$value['url']]['toVersion'] = $newestVersionData['version'];
+                $needsUpdateList[$url]['toVersion'] = $newestVersionData['version'];
             }
 
             // provide info if installed version is elts version
-            $dataArray[$value['url']]['runtime']['elts'] = $newestVersionData['elts'];
+            $dataArray[$url]['runtime']['elts'] = $newestVersionData['elts'];
             if ($newestVersionData['elts']) {
-                $eltsList[$value['url']]['installedVersion'] = $installedVersion;
+                $eltsList[$url]['installedVersion'] = $installedVersion;
             }
-
-            // DebuggerUtility::var_dump($newestVersionData, "newestVersionData");
         }
 
         $this->view->assignMultiple([
@@ -110,7 +125,44 @@ class ObserverModuleController extends ActionController {
         ]);
     }
 
-    public function insertNewDomain() {
-        // TODO: create html form for insert url and apikey to tx_gsmonitorobserver_domain_model_data
+    /**
+     * newDataAction
+     * 
+     * @param \GroundStack\GsMonitorObserver\Domain\Model\Data $data
+     */
+    public function newDataAction(\GroundStack\GsMonitorObserver\Domain\Model\Data $data = NULL) {
+        $this->view->assignMultiple([
+            'test' => 'newData',
+            'data' => $data
+        ]);
+    }
+
+    /**
+     * addNewDataAction
+     * Insert new Data to the database
+     * 
+     * @param \GroundStack\GsMonitorObserver\Domain\Model\Data $newData
+     */
+    public function addNewDataAction(\GroundStack\GsMonitorObserver\Domain\Model\Data $newData = null) {
+
+        // if input of domain / URL is no domain e. g. given ddlkasdfkl <- this is no domain / URL
+        if( preg_match('/((https?:\/\/|(ftp:\/\/)).*|(.*\.[^\.]{2,6})(\/.*)?)(\:.*)?$/m', $newData->getUrl()) === 1) {
+            $this->dataRepository->add($newData);
+            $this->persistenceManager->persistAll();
+            // $this->dataRepository->update($newData);
+
+            $this->addFlashMessage('The object '.$newData->getUrl().' was created.', '', \TYPO3\CMS\Core\Messaging\AbstractMessage::OK);
+            $this->redirect('index');
+        }
+
+        $this->addFlashMessage('The object was not created. Domain / URL wrong, must be like https://www.domain.tld!', '', \TYPO3\CMS\Core\Messaging\AbstractMessage::ERROR);
+        $this->forward(
+            'newData',
+            NULL,
+            NULL,
+            [
+                'data' => $newData
+            ]
+        );
     }
 }

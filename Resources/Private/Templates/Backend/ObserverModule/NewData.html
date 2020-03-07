@@ -1,0 +1,22 @@
+<html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers"
+    xmlns:hhcookie="http://typo3.org/ns/HauerHeinrich/TestModul/ViewHelpers" data-namespace-typo3-fluid="true">
+
+<f:layout name="Backend/Default" />
+
+<f:section name="content">
+    <h1>Insert new data</h1>
+
+    <f:flashMessages />
+
+    <f:debug title="fluid index template">{_all}</f:debug>
+
+    <div class="monitor-observer">
+        <f:form action="addNewData" name="newData" object="{newData}">
+            <f:form.textfield property="url" value="{f:if(condition: '{data.url}', then: '{data.url}', else: '')}" />
+            <f:form.textfield property="apikey" value="{f:if(condition: '{data.apikey}', then: '{data.apikey}', else: '')}" />
+            <f:form.submit name="submit" value="Submit" />
+        </f:form>
+    </div>
+</f:section>
+
+</html>

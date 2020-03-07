@@ -17,7 +17,7 @@ call_user_func(function() {
             'observermodule', // Submodule key
             '', // Position
             [
-                'Backend\ObserverModule' => 'index',
+                'Backend\ObserverModule' => 'index, newData, addNewData',
             ],
             [
                 'access' => 'user,group',

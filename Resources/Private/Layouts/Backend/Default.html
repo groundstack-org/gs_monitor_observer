@@ -1,7 +1,7 @@
 <html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers"
     xmlns:be="http://typo3.org/ns/TYPO3/CMS/Backend/ViewHelpers"
     xmlns:core="http://typo3.org/ns/TYPO3/CMS/Core/ViewHelpers"
-    xmlns:hhcookie="http://typo3.org/ns/HauerHeinrich/TestModul/ViewHelpers"
+    xmlns:hhObserver="http://typo3.org/ns/HauerHeinrich/GsMonitorObserver/ViewHelpers"
     data-namespace-typo3-fluid="true">
 
 <f:be.pageRenderer
@@ -13,21 +13,21 @@
     }"
 
     includeCssFiles="{
-        0: '{f:uri.resource(path:\'Css/Module/cookie.min.css\')}'
+        0: '{f:uri.resource(path:\'Css/Module/observer.min.css\')}'
     }"
 
     includeJsFiles="{
-        0: '{f:uri.resource(path:\'JavaScript/Module/cookie.min.js\')}'
+        0: '{f:uri.resource(path:\'JavaScript/Module/observer.min.js\')}'
     }"
 />
 
 <script><f:format.raw>{script}</f:format.raw></script>
 
-<f:render partial="Backend/ModuleMenu" arguments="{settings: settings, menuIndex: 'overview'}" />
+<f:render partial="Backend/ModuleMenu" arguments="{settings: settings, menuIndex: 'index'}" />
 
-<f:flashMessages />
+<f:flashMessages /> 
 
-<div class="tx-ext-hh-module module-cookie">
+<div class="tx-ext-hh-module module-observer">
     <f:render section="content" />
 
     <f:render partial="Backend/ModuleFooter" arguments="{_all}" />

@@ -15,13 +15,13 @@ call_user_func(function() {
 
     // \TYPO3\CMS\Extbase\Utility\ExtensionUtility::configurePlugin(
     //     'GroundStack.GsMonitorObserver',
-    //     'CookieConsent',
+    //     'ObserverModule',
     //     [
-    //         'Observer' => 'fetchData',
+    //         'ObserverModule' => 'index, newData',
     //     ],
     //     // non-cacheable actions
     //     [
-    //         'Observer' => '',
+    //         'ObserverModule' => '',
     //     ]
     // );
 });
