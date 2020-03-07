@@ -165,4 +165,9 @@ class ObserverModuleController extends ActionController {
             ]
         );
     }
+
+    // TODO: add UpdateAction for existing DB entry
+    public function updateDataAction() {
+        
+    }
 }
