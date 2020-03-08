@@ -67,6 +67,14 @@
                 <header>
                     <a href="{key}" title="Call up the domain: {key}." target="_blank"><f:format.raw>{key}</f:format.raw></a>
                     <a href="{key}/typo3" title="Call up the domain backend: {key}." target="_blank"><f:format.raw>Backend</f:format.raw></a>
+                    <f:form action="updateData" name="updateData" object="{updateData}">
+                        <f:form.hidden property="url" value="{key}" />
+                        <f:form.hidden property="apikey" value="{domain.apikey}" />
+                        <f:form.textfield type="text" property="newUrl"  value="{key}" />
+                        <f:form.textfield type="text" property="newApikey" value="{domain.apikey}" />
+                        <f:form.submit name="submit" value="Edit this entry" />
+                    </f:form>
+                    <f:debug>{_all}</f:debug>
                 </header>
                 <table>
                     <caption>Enviroment</caption>

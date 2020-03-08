@@ -91,9 +91,17 @@ class ObserverModuleController extends ActionController {
 
         foreach ($domains as $key => $value) {
             // get installed data
+            $uid = $value->getUid();
+            $pid = $value->getPid();
             $url = $value->getUrl();
             $apiKey = $value->getApikey();
+
+            // Get info from api
             $dataArray[$url] = json_decode(GeneralUtility::getURL($url.'?eID=anxapi/v1/modules&access_token='.$apiKey), true);
+
+            // $dataArray[$url]['uid'] = $uid;
+            // $dataArray[$url]['pid'] = $pid;
+            $dataArray[$url]['apikey'] = $apiKey;
 
             $installedVersion = $dataArray[$url]['runtime']['framework_installed_version'];
             $installedVersionSplit = explode('.', $installedVersion);
@@ -132,7 +140,6 @@ class ObserverModuleController extends ActionController {
      */
     public function newDataAction(\GroundStack\GsMonitorObserver\Domain\Model\Data $data = NULL) {
         $this->view->assignMultiple([
-            'test' => 'newData',
             'data' => $data
         ]);
     }
@@ -166,8 +173,37 @@ class ObserverModuleController extends ActionController {
         );
     }
 
-    // TODO: add UpdateAction for existing DB entry
-    public function updateDataAction() {
-        
+    /**
+     * initialize updateDataAction
+     *
+     * @return void
+     */
+    public function initializeUpdateDataAction() {
+        if ($this->arguments->hasArgument('updateData')) {
+            $this->arguments->getArgument('updateData')->getPropertyMappingConfiguration()->skipProperties('newUrl');
+            $this->arguments->getArgument('updateData')->getPropertyMappingConfiguration()->skipProperties('newApikey');
+        }
+    }
+
+    /**
+     * updateDataAction
+     * Updates a entry at the database
+     * 
+     * @param \GroundStack\GsMonitorObserver\Domain\Model\Data $updateData
+     * @return void
+     */
+    public function updateDataAction(\GroundStack\GsMonitorObserver\Domain\Model\Data $updateData) {
+        $oldEntry = $this->dataRepository->findByUrl($updateData->getUrl())[0];
+        // get skipped properties
+        $updateDataSkipped = $this->getControllerContext()->getRequest()->getArgument('updateData');
+        $newUrl = $updateDataSkipped['newUrl']; // TODO: validate domain
+        $newApiKey = $updateDataSkipped['newApikey'];
+
+        $oldEntry->setUrl($newUrl);
+        $oldEntry->setApikey($newApiKey);
+
+        $this->dataRepository->update($oldEntry);
+
+        $this->redirect('index');
     }
 }
