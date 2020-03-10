@@ -12,6 +12,8 @@ use \TYPO3\CMS\Extbase\Mvc\View\ViewInterface;
 use TYPO3\CMS\Core\Database\RelationHandler;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 
+use \TYPO3\CMS\Core\Http\RequestFactory;
+
 use GroundStack\GsMonitorObserver\Domain\Repository\DataRepository;
 
 /***
@@ -21,18 +23,23 @@ use GroundStack\GsMonitorObserver\Domain\Repository\DataRepository;
  * For the full copyright and license information, please read the
  * LICENSE.txt file that was distributed with this source code.
  *
- *  (c) 2019 
+ *  (c) 2019
  *
  ***/
 
 class ObserverModuleController extends ActionController {
+
+    /**
+     * @var RequestFactory
+     */
+    private $requestFactory;
 
     protected $extensionKey;
     protected $extensionConfiguration;
 
     /**
      * Persistence Manager
-     * 
+     *
      * @var \TYPO3\CMS\Extbase\Persistence\Generic\PersistenceManager
      * @Inject
      */
@@ -66,8 +73,8 @@ class ObserverModuleController extends ActionController {
 
     protected $extConf;
 
-    public function __construct() {
-        // $this->extConf = GeneralUtility::makeInstance(\GroundStack\TestModul\Helper\ConfigurationHelper::class);
+    public function __construct(RequestFactory $requestFactory) {
+        $this->requestFactory = $requestFactory;
     }
 
     /**
@@ -79,50 +86,57 @@ class ObserverModuleController extends ActionController {
 
     /**
      * action show
-     * 
+     *
      * @return void
      */
     public function indexAction() {
         $domains = $this->dataRepository->findAll();
 
-        $dataArray = [];
-        $needsUpdateList = [];
-        $eltsList = [];
-
         foreach ($domains as $key => $value) {
+            $dataArray = [];
+            $needsUpdateList = [];
+            $eltsList = [];
             // get installed data
             $uid = $value->getUid();
             $pid = $value->getPid();
             $url = $value->getUrl();
             $apiKey = $value->getApikey();
+            $privateKey = $value->getPrivatekey();
+            $publicKey = $value->getPublickey();
 
-            // Get info from api
-            $dataArray[$url] = json_decode(GeneralUtility::getURL($url.'?eID=anxapi/v1/modules&access_token='.$apiKey), true);
+            $token = $this->getJwtToken($url, $apiKey);
 
-            // $dataArray[$url]['uid'] = $uid;
-            // $dataArray[$url]['pid'] = $pid;
-            $dataArray[$url]['apikey'] = $apiKey;
+            if (is_string($token)) {
+                // Get info from api
+                $dataArray[$url] = $this->sendWithJwtToken($url, $token);
 
-            $installedVersion = $dataArray[$url]['runtime']['framework_installed_version'];
-            $installedVersionSplit = explode('.', $installedVersion);
+                // $dataArray[$url]['uid'] = $uid;
+                // $dataArray[$url]['pid'] = $pid;
+                $dataArray[$url]['apikey'] = $apiKey;
+                $dataArray[$url]['privatekey'] = $privateKey;
+                $dataArray[$url]['publickey'] = $publicKey;
 
-            // get the current/newes version of the installed version
-            // this newestVersionData is not(!) the newest LTS version!
-            $newestVersionData = json_decode(GeneralUtility::getURL('https://get.typo3.org/v1/api/major/'.$installedVersion[0].'/release/latest'), true);
-            
-            // check if newest verstion is higher than instelled version
-            $dataArray[$url]['runtime']['newest_current_version'] = $newestVersionData['version'];
-            $dataArray[$url]['runtime']['update_necessary'] = false;
-            if (intval( str_replace('.', '', $installedVersion) ) < intval( str_replace('.', '', $newestVersionData['version']) )) {
-                $dataArray[$url]['runtime']['update_necessary'] = true;
+                $installedVersion = $dataArray[$url]['runtime']['framework_installed_version'];
+                $installedVersionSplit = explode('.', $installedVersion);
 
-                $needsUpdateList[$url]['toVersion'] = $newestVersionData['version'];
-            }
+                // get the current/newes version of the installed version
+                // this newestVersionData is not(!) the newest LTS version!
+                $newestVersionData = json_decode(GeneralUtility::getURL('https://get.typo3.org/v1/api/major/'.$installedVersion[0].'/release/latest'), true);
 
-            // provide info if installed version is elts version
-            $dataArray[$url]['runtime']['elts'] = $newestVersionData['elts'];
-            if ($newestVersionData['elts']) {
-                $eltsList[$url]['installedVersion'] = $installedVersion;
+                // check if newest verstion is higher than instelled version
+                $dataArray[$url]['runtime']['newest_current_version'] = $newestVersionData['version'];
+                $dataArray[$url]['runtime']['update_necessary'] = false;
+                if (intval( str_replace('.', '', $installedVersion) ) < intval( str_replace('.', '', $newestVersionData['version']) )) {
+                    $dataArray[$url]['runtime']['update_necessary'] = true;
+
+                    $needsUpdateList[$url]['toVersion'] = $newestVersionData['version'];
+                }
+
+                // provide info if installed version is elts version
+                $dataArray[$url]['runtime']['elts'] = $newestVersionData['elts'];
+                if ($newestVersionData['elts']) {
+                    $eltsList[$url]['installedVersion'] = $installedVersion;
+                }
             }
         }
 
@@ -135,7 +149,7 @@ class ObserverModuleController extends ActionController {
 
     /**
      * newDataAction
-     * 
+     *
      * @param \GroundStack\GsMonitorObserver\Domain\Model\Data $data
      */
     public function newDataAction(\GroundStack\GsMonitorObserver\Domain\Model\Data $data = NULL) {
@@ -147,7 +161,7 @@ class ObserverModuleController extends ActionController {
     /**
      * addNewDataAction
      * Insert new Data to the database
-     * 
+     *
      * @param \GroundStack\GsMonitorObserver\Domain\Model\Data $newData
      */
     public function addNewDataAction(\GroundStack\GsMonitorObserver\Domain\Model\Data $newData = null) {
@@ -188,7 +202,7 @@ class ObserverModuleController extends ActionController {
     /**
      * updateDataAction
      * Updates a entry at the database
-     * 
+     *
      * @param \GroundStack\GsMonitorObserver\Domain\Model\Data $updateData
      * @return void
      */
@@ -205,5 +219,138 @@ class ObserverModuleController extends ActionController {
         $this->dataRepository->update($oldEntry);
 
         $this->redirect('index');
+    }
+
+    /**
+     * getJwtToken
+     *
+     * @param string $url
+     * @param string $apiKey
+     * @return void
+     */
+    public function getJwtToken(string $url, string $apiKey) {
+        $target = $url . '/gs-monitor-api/v1/data';
+        $additionalOptions = [
+            // Additional headers for this specific request
+            'headers' => [
+                'Cache-Control' => 'no-cache',
+                'api-key' => $apiKey
+            ],
+            // Additional options, see http://docs.guzzlephp.org/en/latest/request-options.html
+            'allow_redirects' => false,
+            'cookies' => false,
+        ];
+
+        // Return a PSR-7 compliant response object
+        $response = $this->requestFactory->request($target, 'POST', $additionalOptions);
+        if ($response->getStatusCode() === 200) {
+            if (strpos($response->getHeaderLine('Content-Type'), 'application/json; charset=UTF-8') === 0) {
+                $token = $response->getHeaderLine('Authorization');
+                if (!empty($token)) {
+                    return $token;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    public function sendWithJwtToken(string $url, string $jwtToken) {
+        $target = $url.'/gs-monitor-api/v1/data';
+        $additionalOptions = [
+            // Additional headers for this specific request
+            'headers' => [
+                'Cache-Control' => 'no-cache',
+                'Authorization' => 'Bearer ' . $jwtToken
+            ],
+            // Additional options, see http://docs.guzzlephp.org/en/latest/request-options.html
+            'allow_redirects' => false,
+            'cookies' => false,
+        ];
+
+        // Return a PSR-7 compliant response object
+        $response = $this->requestFactory->request($target, 'POST', $additionalOptions);
+
+        if ($response->getStatusCode() === 200) {
+            if (strpos($response->getHeaderLine('Content-Type'), 'application/json; charset=UTF-8') === 0) {
+                $domain = $this->dataRepository->findByUrl($url)[0];
+                $private_key = $domain->getPrivatekey();
+
+                $responseContent = json_decode($response->getBody(), true);
+                $responseDecoded = base64_decode($responseContent['secretInfo']);
+
+                openssl_private_decrypt($responseDecoded, $decrypted, $private_key);
+                $responseArray = json_decode($decrypted, true);
+
+                $responseData = openssl_decrypt(base64_decode($responseContent['encryptedData']), $responseArray['cipher'], $responseArray['password'], 0, base64_decode($responseArray['iv']));
+
+                return json_decode($responseData, true);
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * newKeyPairAction
+     * Generate new private / public key pair
+     *
+     * @param string $url
+     * @return void
+     */
+    public function newKeyPairAction(string $url = '') {
+
+        if(!empty($url)) {
+            // Configuration settings for the key
+            $config = array(
+                'digest_alg' => 'sha512',
+                'private_key_bits' => 4096,
+                'private_key_type' => OPENSSL_KEYTYPE_RSA,
+            );
+
+            // Create the private and public key
+            $res = openssl_pkey_new($config);
+
+            // Extract the private key into $private_key
+            openssl_pkey_export($res, $private_key);
+
+            // Extract the public key into $public_key
+            $publickey=openssl_pkey_get_details($res);
+            $publickey=$publickey["key"];
+
+            // Write to LocalConfiguration.php
+            // $objectManager = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Extbase\\Object\\ObjectManager');
+            // $configurationManager = $objectManager->get('TYPO3\\CMS\\Core\\Configuration\\ConfigurationManager');
+            // $configurationManager->updateLocalConfiguration([
+            //     'EXTENSIONS'=> [
+            //         'gs_monitor_observer' => [
+            //             'privateKey' => $private_key,
+            //             'publicKey' => $public_key
+            //         ]
+            //     ]
+            // ]);
+
+            // Save Key to Database
+            $entry = $this->dataRepository->findByUrl($url)[0];
+            $entry->setPrivatekey($private_key);
+            $entry->setPublickey($public_key);
+            $this->dataRepository->update($entry);
+
+            $this->forward(
+                'index',
+                NULL,
+                NULL,
+                []
+            );
+        }
+
+        $this->forward(
+            'index',
+            NULL,
+            NULL,
+            [
+                'error' => 'No key generated'
+            ]
+        );
     }
 }

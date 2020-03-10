@@ -151,5 +151,25 @@ return [
                 'eval' => 'trim,required'
             ],
         ],
+
+        'privatekey' => [
+            'exclude' => true,
+            'label' => 'private-key',
+            'config' => [
+                'type' => 'input',
+                'size' => 60,
+                'eval' => 'trim,required'
+            ],
+        ],
+
+        'publickey' => [
+            'exclude' => true,
+            'label' => 'public-key',
+            'config' => [
+                'type' => 'input',
+                'size' => 60,
+                'eval' => 'trim,required'
+            ],
+        ],
     ],
 ];

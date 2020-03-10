@@ -1,7 +1,6 @@
 <html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers"
     xmlns:be="http://typo3.org/ns/TYPO3/CMS/Backend/ViewHelpers"
     xmlns:core="http://typo3.org/ns/TYPO3/CMS/Core/ViewHelpers"
-    xmlns:hhObserver="http://typo3.org/ns/HauerHeinrich/GsMonitorObserver/ViewHelpers"
     data-namespace-typo3-fluid="true">
 
 <f:be.pageRenderer
@@ -25,7 +24,7 @@
 
 <f:render partial="Backend/ModuleMenu" arguments="{settings: settings, menuIndex: 'index'}" />
 
-<f:flashMessages /> 
+<f:flashMessages />
 
 <div class="tx-ext-hh-module module-observer">
     <f:render section="content" />

@@ -6,22 +6,31 @@
         {
             "name": "Christian Hackl",
             "email": "info@groundstack.de",
-            "homepage": "http://www.groundstack.de",
+            "homepage": "http://groundstack.de",
             "role": "Developer"
         }
     ],
+    "support": {
+        "issues": "https://github.com/groundstack-org/gs_monitor_observer/issues",
+        "source": "https://github.com/groundstack-org/gs_monitor_observer",
+        "docs": "https://github.com/groundstack-org/gs_monitor_observer/blob/master/README.md"
+    },
     "version": "0.1.0",
-    "license": ["MIT"],
-    "keywords": ["TYPO3 CMS", "extension"],
+    "license": ["GPL-2.0-or-later"],
+    "keywords": [
+        "TYPO3 CMS",
+        "extension",
+        "groundstack"
+    ],
     "replace": {
-        "hauer-heinrich/gs_monitor_observer": "self.version",
+        "groundstack/gs_monitor_observer": "self.version",
         "typo3-ter/gs-monitor-observer": "self.version"
     },
     "require": {
-        "typo3/cms-core": "^9.5.0 || ^9.9.99",
-        "typo3/cms-fluid": "^9.5.0 || ^9.9.99",
-        "typo3/cms-frontend": "^9.5.0 || ^9.9.99",
-        "typo3/cms-fluid-styled-content": "^9.5.0 || ^9.9.99"
+        "typo3/cms-core": ">=9.5.0 <=10.3.0",
+        "typo3/cms-fluid": ">=9.5.0 <=10.3.0",
+        "typo3/cms-frontend": ">=9.5.0 <=10.3.0",
+        "typo3/cms-fluid-styled-content": ">=9.5.0 <=10.3.0"
     },
     "autoload": {
         "psr-4": {

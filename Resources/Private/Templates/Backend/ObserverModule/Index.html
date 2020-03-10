@@ -1,5 +1,4 @@
-<html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers"
-    xmlns:hhcookie="http://typo3.org/ns/HauerHeinrich/TestModul/ViewHelpers" data-namespace-typo3-fluid="true">
+<html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers" data-namespace-typo3-fluid="true">
 
 <f:layout name="Backend/Default" />
 
@@ -62,80 +61,99 @@
 
         <f:comment>TODO: make accordion</f:comment>
         <br><br><br><br>
-        <f:for each="{data}" as="domain" key="key">
-            <div class="enviroment">
+        <f:for each="{data}" as="domain" key="arrayKey">
+            <div class="content">
                 <header>
-                    <a href="{key}" title="Call up the domain: {key}." target="_blank"><f:format.raw>{key}</f:format.raw></a>
-                    <a href="{key}/typo3" title="Call up the domain backend: {key}." target="_blank"><f:format.raw>Backend</f:format.raw></a>
+                    <a href="{arrayKey}" title="Call up the domain: {arrayKey}." target="_blank"><f:format.raw>{arrayKey}</f:format.raw></a>
+                    <a href="{arrayKey}/typo3" title="Call up the domain backend: {arrayKey}." target="_blank"><f:format.raw>Backend</f:format.raw></a>
                     <f:form action="updateData" name="updateData" object="{updateData}">
-                        <f:form.hidden property="url" value="{key}" />
+                        <f:form.hidden property="url" value="{arrayKey}" />
                         <f:form.hidden property="apikey" value="{domain.apikey}" />
-                        <f:form.textfield type="text" property="newUrl"  value="{key}" />
+                        <f:form.textfield type="text" property="newUrl"  value="{arrayKey}" />
                         <f:form.textfield type="text" property="newApikey" value="{domain.apikey}" />
                         <f:form.submit name="submit" value="Edit this entry" />
                     </f:form>
-                    <f:debug>{_all}</f:debug>
                 </header>
-                <table>
-                    <caption>Enviroment</caption>
-                    <thead>
-                        <tr>
-                            <th scope="col">Platform</th>
-                            <th scope="col">Framework</th>
-                            <th scope="col">Current/New Version</th>
-                            <th scope="col">Newest LTS Version</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td data-label="Platform">
-                                <f:format.raw>{domain.runtime.platform}</f:format.raw> - <f:format.raw>
-                                    {domain.runtime.platform_version}</f:format.raw>
-                            </td>
-                            <td data-label="Framework">
-                                <f:format.raw>{domain.runtime.framework}</f:format.raw> - <f:format.raw>
-                                    {domain.runtime.framework_installed_version}</f:format.raw>
-                            </td>
-                            <td data-label="New Version" class="newest-version {f:if(condition: '{domain.runtime.elts}', then: 'error')} {f:if(condition: '{domain.runtime.update_necessary}', then: 'warning', else: '')}">
-                                <f:format.raw>{domain.runtime.newest_current_version}</f:format.raw>
-                            </td>
-                            <td data-label="New Version" class="newest-version {f:if(condition: '{domain.runtime.update_necessary} && {domain.runtime.elts}', then: 'error')}">
-                                <f:format.raw>{domain.runtime.framework_newest_version}</f:format.raw>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
 
-            <div class="extensions">
-                <table>
-                    <caption>Installed Extensions</caption>
-                    <thead>
-                        <tr>
-                            <th scope="col">Extension</th>
-                            <th scope="col">Version</th>
-                            <th scope="col">Current/New Version</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <f:for each="{domain.modules}" as="module" iteration="i">
-                            <tr>
-                                <td data-label="Extension">
-                                    <f:format.raw>{module.name}</f:format.raw>
-                                </td>
-                                <td data-label="Version">
-                                    <f:format.raw>{module.installed_version}</f:format.raw>
-                                </td>
-                                <td data-label="New Version">
-                                    <f:format.raw>{module.newest_version}</f:format.raw>
-                                </td>
-                            </tr>
-                        </f:for>
-                    </tbody>
-                </table>
+                <div class="keys">
+                    <p>Public-Key for usage with EXT: gs_monitor_observer</p>
+                    <f:link.action action="newKeyPair" arguments="{url: '{arrayKey}'}">Generate new Private/Public key pair.</f:link.action>
+
+                    <button class="accordion accordion-key">Show keys</button>
+                    <div class="panel">
+                        <pre>{domain.publickey}</pre>
+
+                        <br><br><br>
+
+                        <p>Private-Key don't show this anyone!!</p>
+                        <pre>{domain.privatekey}</pre>
+                    </div>
+                </div>
+
+                <button class="accordion accordion-domain">Show more info</button>
+                <div class="panel">
+                    <div class="enviroment">
+                        <table>
+                            <caption>Enviroment</caption>
+                            <thead>
+                                <tr>
+                                    <th scope="col">Platform</th>
+                                    <th scope="col">Framework</th>
+                                    <th scope="col">Current/New Version</th>
+                                    <th scope="col">Newest LTS Version</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td data-label="Platform">
+                                        <f:format.raw>{domain.runtime.platform}</f:format.raw> - <f:format.raw>
+                                            {domain.runtime.platform_version}</f:format.raw>
+                                    </td>
+                                    <td data-label="Framework">
+                                        <f:format.raw>{domain.runtime.framework}</f:format.raw> - <f:format.raw>
+                                            {domain.runtime.framework_installed_version}</f:format.raw>
+                                    </td>
+                                    <td data-label="New Version" class="newest-version {f:if(condition: '{domain.runtime.elts}', then: 'error')} {f:if(condition: '{domain.runtime.update_necessary}', then: 'warning', else: '')}">
+                                        <f:format.raw>{domain.runtime.newest_current_version}</f:format.raw>
+                                    </td>
+                                    <td data-label="New Version" class="newest-version {f:if(condition: '{domain.runtime.update_necessary} && {domain.runtime.elts}', then: 'error')}">
+                                        <f:format.raw>{domain.runtime.framework_newest_version}</f:format.raw>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="extensions">
+                        <table>
+                            <caption>Installed Extensions</caption>
+                            <thead>
+                                <tr>
+                                    <th scope="col">Extension</th>
+                                    <th scope="col">Version</th>
+                                    <th scope="col">Current/New Version</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <f:for each="{domain.modules}" as="module" iteration="i">
+                                    <tr>
+                                        <td data-label="Extension">
+                                            <f:format.raw>{module.name}</f:format.raw>
+                                        </td>
+                                        <td data-label="Version">
+                                            <f:format.raw>{module.installed_version}</f:format.raw>
+                                        </td>
+                                        <td data-label="New Version">
+                                            <f:format.raw>{module.newest_version}</f:format.raw>
+                                        </td>
+                                    </tr>
+                                </f:for>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </f:for>
-
     </div>
 
     <style>
@@ -206,7 +224,7 @@
             }
 
             .monitor-observer table td::before {
-                /**   
+                /**
                     aria-label has no advantage, it won't be read inside a table
                     content: attr(aria-label);
                 */
@@ -221,6 +239,33 @@
             }
         }
 
+        /* accordion */
+        .monitor-observer .accordion {
+            background-color: #eee;
+            color: #444;
+            cursor: pointer;
+            padding: 18px;
+            width: 100%;
+            border: none;
+            text-align: left;
+            outline: none;
+            font-size: 15px;
+            transition: 0.4s;
+        }
+
+        .monitor-observer .active,
+        .monitor-observer .accordion:hover {
+            background-color: #ccc;
+        }
+
+        .monitor-observer .panel {
+            padding: 0 18px;
+            background-color: white;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.2s ease-out;
+        }
+
         /* Custom */
         .monitor-observer table td.warning {
             background-color: orange;
@@ -231,6 +276,36 @@
         }
 
     </style>
+    <script>
+        var acc = document.getElementsByClassName("accordion-domain");
+        var i;
+
+        for (i = 0; i < acc.length; i++) {
+                acc[i].addEventListener("click", function() {
+                this.classList.toggle("active");
+                var panel = this.nextElementSibling;
+                if (panel.style.maxHeight) {
+                    panel.style.maxHeight = null;
+                } else {
+                    panel.style.maxHeight = panel.scrollHeight + "px";
+                }
+            });
+        }
+
+        var accKey = document.getElementsByClassName("accordion-key");
+        var iKey;
+        for (iKey = 0; iKey < accKey.length; iKey++) {
+                accKey[iKey].addEventListener("click", function() {
+                this.classList.toggle("active");
+                var panel = this.nextElementSibling;
+                if (panel.style.maxHeight) {
+                    panel.style.maxHeight = null;
+                } else {
+                    panel.style.maxHeight = panel.scrollHeight + "px";
+                }
+            });
+        }
+        </script>
 </f:section>
 
 </html>

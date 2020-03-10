@@ -17,13 +17,13 @@ call_user_func(function() {
             'observermodule', // Submodule key
             '', // Position
             [
-                'Backend\ObserverModule' => 'index, newData, addNewData, updateData',
+                'Backend\ObserverModule' => 'index, newData, addNewData, updateData, newKeyPair',
             ],
             [
-                'access' => 'user,group',
+                'access' => 'systemMaintainer',
                 'icon'   => 'EXT:gs_monitor_observer/Resources/Public/Icons/user_mod_observermodule.svg',
                 'labels' => 'LLL:EXT:gs_monitor_observer/Resources/Private/Language/locallang.xlf',
-                // 'navigationComponentId' => '', // hide pagetree
+                'navigationComponentId' => '', // hide pagetree
                 'inheritNavigationComponentFromMainModule' => false
             ]
         );

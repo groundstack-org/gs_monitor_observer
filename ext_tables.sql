@@ -31,6 +31,8 @@ CREATE TABLE tx_gsmonitorobserver_domain_model_data (
 
     url varchar(255) DEFAULT '' NOT NULL,
     apikey varchar(255) DEFAULT '' NOT NULL,
+    privatekey text DEFAULT '' NOT NULL,
+    publickey text DEFAULT '' NOT NULL,
 
     PRIMARY KEY (uid),
     KEY parent (pid),

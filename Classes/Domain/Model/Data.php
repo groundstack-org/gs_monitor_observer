@@ -32,6 +32,18 @@ class Data extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
     protected $apikey;
 
     /**
+     * privatekey
+     * @var string
+     */
+    protected $privatekey;
+
+    /**
+     * publickey
+     * @var string
+     */
+    protected $publickey;
+
+    /**
      * __construct
      */
     public function __construct()
@@ -92,4 +104,43 @@ class Data extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
         return $this->apikey;
     }
 
+    /**
+     * sets the privatekey attribute
+     *
+     * @param string $privatekey
+     */
+    public function setPrivatekey($privatekey)
+    {
+        $this->privatekey = $privatekey;
+    }
+
+    /**
+     * returns the privatekey attribute
+     *
+     * @return string
+     */
+    public function getPrivatekey()
+    {
+        return $this->privatekey;
+    }
+
+    /**
+     * sets the publickey attribute
+     *
+     * @param string $publickey
+     */
+    public function setPublickey($publickey)
+    {
+        $this->publickey = $publickey;
+    }
+
+    /**
+     * returns the publickey attribute
+     *
+     * @return string
+     */
+    public function getPublickey()
+    {
+        return $this->publickey;
+    }
 }
