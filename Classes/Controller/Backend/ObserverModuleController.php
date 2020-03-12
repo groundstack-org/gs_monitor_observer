@@ -111,6 +111,8 @@ class ObserverModuleController extends ActionController {
             $dataArray[$url]['privateKey'] = $privateKey;
             $dataArray[$url]['publicKey'] = $publicKey;
 
+            $dataArray[$url]['shortUrl'] = preg_replace('#^https?://#', '', $url);
+
             if(empty($apiKey)) {
                 // TODO: show message
                 break;
@@ -126,10 +128,10 @@ class ObserverModuleController extends ActionController {
 
                 if (is_string($token)) {
                     // Get info from api
-                    $dataArray[$url] = $this->sendWithJwtToken($url, $token);
+                    $apiInfo = $this->sendWithJwtToken($url, $token);
 
-                    if(!empty($dataArray[$url])) {
-                        $installedVersion = $dataArray[$url]['runtime']['framework_installed_version'];
+                    if(!empty($apiInfo)) {
+                        $installedVersion = $apiInfo['runtime']['framework_installed_version'];
                         $installedVersionSplit = explode('.', $installedVersion);
 
                         // get the current/newes version of the installed version
@@ -137,25 +139,24 @@ class ObserverModuleController extends ActionController {
                         $newestVersionData = json_decode(GeneralUtility::getURL('https://get.typo3.org/v1/api/major/'.$installedVersion[0].'/release/latest'), true);
 
                         // check if newest verstion is higher than instelled version
-                        $dataArray[$url]['runtime']['newest_current_version'] = $newestVersionData['version'];
-                        $dataArray[$url]['runtime']['update_necessary'] = false;
+                        $apiInfo['runtime']['newest_current_version'] = $newestVersionData['version'];
+                        $apiInfo['runtime']['update_necessary'] = false;
                         if (intval( str_replace('.', '', $installedVersion) ) < intval( str_replace('.', '', $newestVersionData['version']) )) {
-                            $dataArray[$url]['runtime']['update_necessary'] = true;
+                            $apiInfo['runtime']['update_necessary'] = true;
 
                             $needsUpdateList[$url]['toVersion'] = $newestVersionData['version'];
                         }
 
                         // provide info if installed version is elts version
-                        $dataArray[$url]['runtime']['elts'] = $newestVersionData['elts'];
+                        $apiInfo['runtime']['elts'] = $newestVersionData['elts'];
                         if ($newestVersionData['elts']) {
                             $eltsList[$url]['installedVersion'] = $installedVersion;
                         }
+
+
+                        $dataArray[$url]['apiInfo'] = $apiInfo;
                     }
                 }
-
-                $dataArray[$url]['apikey'] = $apiKey;
-                $dataArray[$url]['privateKey'] = $privateKey;
-                $dataArray[$url]['publicKey'] = $publicKey;
             }
         }
 

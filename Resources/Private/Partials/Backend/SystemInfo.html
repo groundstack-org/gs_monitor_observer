@@ -1,0 +1,64 @@
+<html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers"
+    data-namespace-typo3-fluid="true">
+
+<div class="enviroment">
+    <table>
+        <caption>Enviroment</caption>
+        <thead>
+            <tr>
+                <th scope="col">Platform</th>
+                <th scope="col">Framework</th>
+                <th scope="col">Current/New Version</th>
+                <th scope="col">Newest LTS Version</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td data-label="Platform">
+                    <f:format.raw>{domain.runtime.platform}</f:format.raw> - <f:format.raw>
+                        {domain.runtime.platform_version}</f:format.raw>
+                </td>
+                <td data-label="Framework">
+                    <f:format.raw>{domain.runtime.framework}</f:format.raw> - <f:format.raw>
+                        {domain.runtime.framework_installed_version}</f:format.raw>
+                </td>
+                <td data-label="New Version" class="newest-version {f:if(condition: '{domain.runtime.elts}', then: 'error')} {f:if(condition: '{domain.runtime.update_necessary}', then: 'warning', else: '')}">
+                    <f:format.raw>{domain.runtime.newest_current_version}</f:format.raw>
+                </td>
+                <td data-label="New Version" class="newest-version {f:if(condition: '{domain.runtime.update_necessary} && {domain.runtime.elts}', then: 'error')}">
+                    <f:format.raw>{domain.runtime.framework_newest_version}</f:format.raw>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="extensions">
+    <table>
+        <caption>Installed Extensions</caption>
+        <thead>
+            <tr>
+                <th scope="col">Extension</th>
+                <th scope="col">Version</th>
+                <th scope="col">Current/New Version</th>
+            </tr>
+        </thead>
+        <tbody>
+            <f:for each="{domain.modules}" as="module" iteration="i">
+                <tr>
+                    <td data-label="Extension">
+                        <f:format.raw>{module.name}</f:format.raw>
+                    </td>
+                    <td data-label="Version">
+                        <f:format.raw>{module.installed_version}</f:format.raw>
+                    </td>
+                    <td data-label="New Version">
+                        <f:format.raw>{module.newest_version}</f:format.raw>
+                    </td>
+                </tr>
+            </f:for>
+        </tbody>
+    </table>
+</div>
+
+</html>

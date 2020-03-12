@@ -62,13 +62,22 @@
         <f:for each="{data}" as="domain" key="arrayKey" iteration="i">
             <div class="content">
                 <header>
-                    <a href="{arrayKey}" title="Call up the domain: {arrayKey}." target="_blank"><f:format.raw>{arrayKey}</f:format.raw></a>
-                    <a href="{arrayKey}/typo3" title="Call up the domain backend: {arrayKey}." target="_blank"><f:format.raw>Backend</f:format.raw></a>
+                    <a href="{arrayKey}" class="h1" title="Call up the domain: {arrayKey}." target="_blank"><f:format.raw>{domain.shortUrl}</f:format.raw></a>
+                    <a href="{arrayKey}/typo3" class="h2" title="Call up the domain backend: {arrayKey}." target="_blank"><f:format.raw>Backend</f:format.raw></a>
+                </header>
+
+                <div class="update">
                     <f:form action="updateData" name="updateData" object="{updateData}">
                         <f:form.hidden property="url" value="{arrayKey}" />
                         <f:form.hidden property="apikey" value="{domain.apikey}" />
-                        <f:form.textfield type="text" property="newUrl"  value="{arrayKey}" />
-                        <f:form.textfield type="text" property="newApikey" value="{domain.apikey}" />
+
+                        <div class="form-field field-text">
+                            <f:form.textfield type="text" property="newUrl"  value="{arrayKey}" />
+                        </div>
+
+                        <div class="form-field field-text">
+                            <f:form.textfield type="text" property="newApikey" value="{domain.apikey}" />
+                        </div>
 
                         <div class="form-field field-checkbox">
                             <label for="d-{i.cycle}-hidden">Hidden</label>
@@ -77,7 +86,7 @@
 
                         <f:form.submit name="submit" value="Edit this entry" />
                     </f:form>
-                </header>
+                </div>
 
                 <div class="keys">
                     <p>Public-Key for usage with EXT: gs_monitor_observer</p>
@@ -90,68 +99,10 @@
                     </f:if>
                 </div>
 
-                <f:if condition="{domain.runtime.platform} || {domain.modules}">
+                <f:if condition="{domain.apiInfo.runtime.platform} || {domain.apiInfo.modules}">
                     <button class="accordion accordion-domain">Show more info</button>
                     <div class="panel">
-                        <div class="enviroment">
-                            <table>
-                                <caption>Enviroment</caption>
-                                <thead>
-                                    <tr>
-                                        <th scope="col">Platform</th>
-                                        <th scope="col">Framework</th>
-                                        <th scope="col">Current/New Version</th>
-                                        <th scope="col">Newest LTS Version</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td data-label="Platform">
-                                            <f:format.raw>{domain.runtime.platform}</f:format.raw> - <f:format.raw>
-                                                {domain.runtime.platform_version}</f:format.raw>
-                                        </td>
-                                        <td data-label="Framework">
-                                            <f:format.raw>{domain.runtime.framework}</f:format.raw> - <f:format.raw>
-                                                {domain.runtime.framework_installed_version}</f:format.raw>
-                                        </td>
-                                        <td data-label="New Version" class="newest-version {f:if(condition: '{domain.runtime.elts}', then: 'error')} {f:if(condition: '{domain.runtime.update_necessary}', then: 'warning', else: '')}">
-                                            <f:format.raw>{domain.runtime.newest_current_version}</f:format.raw>
-                                        </td>
-                                        <td data-label="New Version" class="newest-version {f:if(condition: '{domain.runtime.update_necessary} && {domain.runtime.elts}', then: 'error')}">
-                                            <f:format.raw>{domain.runtime.framework_newest_version}</f:format.raw>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <div class="extensions">
-                            <table>
-                                <caption>Installed Extensions</caption>
-                                <thead>
-                                    <tr>
-                                        <th scope="col">Extension</th>
-                                        <th scope="col">Version</th>
-                                        <th scope="col">Current/New Version</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <f:for each="{domain.modules}" as="module" iteration="i">
-                                        <tr>
-                                            <td data-label="Extension">
-                                                <f:format.raw>{module.name}</f:format.raw>
-                                            </td>
-                                            <td data-label="Version">
-                                                <f:format.raw>{module.installed_version}</f:format.raw>
-                                            </td>
-                                            <td data-label="New Version">
-                                                <f:format.raw>{module.newest_version}</f:format.raw>
-                                            </td>
-                                        </tr>
-                                    </f:for>
-                                </tbody>
-                            </table>
-                        </div>
+                        <f:render partial="Backend/SystemInfo" arguments="{domain: domain.apiInfo}" />
                     </div>
                 </f:if>
             </div>
@@ -277,6 +228,26 @@
             background-color: red;
         }
 
+        .monitor-observer .content {
+            border: 1px solid;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .monitor-observer .content .h1,
+        .monitor-observer .content .h2 {
+            display: block;
+            margin-top: 0;
+        }
+
+        .monitor-observer .update {
+            margin-bottom: 40px;
+            margin-top: 20px;
+        }
+
+        .monitor-observer .update .form-field {
+            display: inline-block;
+        }
     </style>
     <script>
         var acc = document.getElementsByClassName("accordion-domain");
