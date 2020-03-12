@@ -1,5 +1,5 @@
 #
-# Table structure for table 'tx_hhextcookieconsent_domain_model_cookieconsent'
+# Table structure for table 'tx_gsmonitorobserver_domain_model_data'
 #
 CREATE TABLE tx_gsmonitorobserver_domain_model_data (
     uid int(11) NOT NULL auto_increment,

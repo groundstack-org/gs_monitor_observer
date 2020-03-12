@@ -19,29 +19,35 @@ use \TYPO3\CMS\Extbase\Persistence\ObjectStorage;
  * Data
  */
 class Data extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
+
+    /**
+     * @var int
+     */
+    protected $hidden;
+
     /**
      * url
      * @var string
      */
-    protected $url;
+    protected $url = '';
 
     /**
      * apikey
      * @var string
      */
-    protected $apikey;
+    protected $apikey = '';
 
     /**
      * privatekey
      * @var string
      */
-    protected $privatekey;
+    protected $privatekey = '';
 
     /**
      * publickey
      * @var string
      */
-    protected $publickey;
+    protected $publickey = '';
 
     /**
      * __construct
@@ -62,6 +68,24 @@ class Data extends \TYPO3\CMS\Extbase\DomainObject\AbstractEntity {
      */
     protected function initStorageObjects()
     {
+    }
+
+    /**
+     * sets the hidden attribute
+     *
+     * @param int $hidden
+     */
+    public function setHidden($hidden) {
+        $this->hidden = $hidden;
+    }
+
+    /**
+     * returns the hidden attribute
+     *
+     * @return int
+     */
+    public function getHidden() {
+        return $this->hidden;
     }
 
     /**

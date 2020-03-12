@@ -36,6 +36,10 @@ class DataRepository extends \TYPO3\CMS\Extbase\Persistence\Repository {
 
         /** @var \TYPO3\CMS\Extbase\Persistence\Generic\Typo3QuerySettings $querySettings */
         $querySettings = $this->objectManager->get(\TYPO3\CMS\Extbase\Persistence\Generic\Typo3QuerySettings::class);
+
+        // Get Hidden and Deleted Records
+        $querySettings->setIgnoreEnableFields(TRUE);
+
         $querySettings->setRespectStoragePage(FALSE);
         $querySettings->setRespectSysLanguage(TRUE);
         $this->setDefaultQuerySettings($querySettings);

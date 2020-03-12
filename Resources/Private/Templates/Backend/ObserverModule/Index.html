@@ -7,8 +7,6 @@
 
     <f:flashMessages />
 
-    <f:comment><f:debug title="fluid index template">{_all}</f:debug></f:comment>
-
     <div class="monitor-observer">
         <div class="needs-update-list">
             <table>
@@ -61,7 +59,7 @@
 
         <f:comment>TODO: make accordion</f:comment>
         <br><br><br><br>
-        <f:for each="{data}" as="domain" key="arrayKey">
+        <f:for each="{data}" as="domain" key="arrayKey" iteration="i">
             <div class="content">
                 <header>
                     <a href="{arrayKey}" title="Call up the domain: {arrayKey}." target="_blank"><f:format.raw>{arrayKey}</f:format.raw></a>
@@ -71,6 +69,12 @@
                         <f:form.hidden property="apikey" value="{domain.apikey}" />
                         <f:form.textfield type="text" property="newUrl"  value="{arrayKey}" />
                         <f:form.textfield type="text" property="newApikey" value="{domain.apikey}" />
+
+                        <div class="form-field field-checkbox">
+                            <label for="d-{i.cycle}-hidden">Hidden</label>
+                            <f:form.checkbox id="d-{i.cycle}-hidden" property="hidden" value="1" checked="{domain.hidden} == 1" />
+                        </div>
+
                         <f:form.submit name="submit" value="Edit this entry" />
                     </f:form>
                 </header>
@@ -78,80 +82,78 @@
                 <div class="keys">
                     <p>Public-Key for usage with EXT: gs_monitor_observer</p>
                     <f:link.action action="newKeyPair" arguments="{url: '{arrayKey}'}">Generate new Private/Public key pair.</f:link.action>
-
-                    <button class="accordion accordion-key">Show keys</button>
-                    <div class="panel">
-                        <pre>{domain.publickey}</pre>
-
-                        <br><br><br>
-
-                        <p>Private-Key don't show this anyone!!</p>
-                        <pre>{domain.privatekey}</pre>
-                    </div>
+                    <f:if condition="{domain.publicKey}">
+                        <button class="accordion accordion-key">Show keys</button>
+                        <div class="panel">
+                            <pre>{domain.publicKey}</pre>
+                        </div>
+                    </f:if>
                 </div>
 
-                <button class="accordion accordion-domain">Show more info</button>
-                <div class="panel">
-                    <div class="enviroment">
-                        <table>
-                            <caption>Enviroment</caption>
-                            <thead>
-                                <tr>
-                                    <th scope="col">Platform</th>
-                                    <th scope="col">Framework</th>
-                                    <th scope="col">Current/New Version</th>
-                                    <th scope="col">Newest LTS Version</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td data-label="Platform">
-                                        <f:format.raw>{domain.runtime.platform}</f:format.raw> - <f:format.raw>
-                                            {domain.runtime.platform_version}</f:format.raw>
-                                    </td>
-                                    <td data-label="Framework">
-                                        <f:format.raw>{domain.runtime.framework}</f:format.raw> - <f:format.raw>
-                                            {domain.runtime.framework_installed_version}</f:format.raw>
-                                    </td>
-                                    <td data-label="New Version" class="newest-version {f:if(condition: '{domain.runtime.elts}', then: 'error')} {f:if(condition: '{domain.runtime.update_necessary}', then: 'warning', else: '')}">
-                                        <f:format.raw>{domain.runtime.newest_current_version}</f:format.raw>
-                                    </td>
-                                    <td data-label="New Version" class="newest-version {f:if(condition: '{domain.runtime.update_necessary} && {domain.runtime.elts}', then: 'error')}">
-                                        <f:format.raw>{domain.runtime.framework_newest_version}</f:format.raw>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <div class="extensions">
-                        <table>
-                            <caption>Installed Extensions</caption>
-                            <thead>
-                                <tr>
-                                    <th scope="col">Extension</th>
-                                    <th scope="col">Version</th>
-                                    <th scope="col">Current/New Version</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <f:for each="{domain.modules}" as="module" iteration="i">
+                <f:if condition="{domain.runtime.platform} || {domain.modules}">
+                    <button class="accordion accordion-domain">Show more info</button>
+                    <div class="panel">
+                        <div class="enviroment">
+                            <table>
+                                <caption>Enviroment</caption>
+                                <thead>
                                     <tr>
-                                        <td data-label="Extension">
-                                            <f:format.raw>{module.name}</f:format.raw>
+                                        <th scope="col">Platform</th>
+                                        <th scope="col">Framework</th>
+                                        <th scope="col">Current/New Version</th>
+                                        <th scope="col">Newest LTS Version</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td data-label="Platform">
+                                            <f:format.raw>{domain.runtime.platform}</f:format.raw> - <f:format.raw>
+                                                {domain.runtime.platform_version}</f:format.raw>
                                         </td>
-                                        <td data-label="Version">
-                                            <f:format.raw>{module.installed_version}</f:format.raw>
+                                        <td data-label="Framework">
+                                            <f:format.raw>{domain.runtime.framework}</f:format.raw> - <f:format.raw>
+                                                {domain.runtime.framework_installed_version}</f:format.raw>
                                         </td>
-                                        <td data-label="New Version">
-                                            <f:format.raw>{module.newest_version}</f:format.raw>
+                                        <td data-label="New Version" class="newest-version {f:if(condition: '{domain.runtime.elts}', then: 'error')} {f:if(condition: '{domain.runtime.update_necessary}', then: 'warning', else: '')}">
+                                            <f:format.raw>{domain.runtime.newest_current_version}</f:format.raw>
+                                        </td>
+                                        <td data-label="New Version" class="newest-version {f:if(condition: '{domain.runtime.update_necessary} && {domain.runtime.elts}', then: 'error')}">
+                                            <f:format.raw>{domain.runtime.framework_newest_version}</f:format.raw>
                                         </td>
                                     </tr>
-                                </f:for>
-                            </tbody>
-                        </table>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="extensions">
+                            <table>
+                                <caption>Installed Extensions</caption>
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Extension</th>
+                                        <th scope="col">Version</th>
+                                        <th scope="col">Current/New Version</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <f:for each="{domain.modules}" as="module" iteration="i">
+                                        <tr>
+                                            <td data-label="Extension">
+                                                <f:format.raw>{module.name}</f:format.raw>
+                                            </td>
+                                            <td data-label="Version">
+                                                <f:format.raw>{module.installed_version}</f:format.raw>
+                                            </td>
+                                            <td data-label="New Version">
+                                                <f:format.raw>{module.newest_version}</f:format.raw>
+                                            </td>
+                                        </tr>
+                                    </f:for>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                </div>
+                </f:if>
             </div>
         </f:for>
     </div>

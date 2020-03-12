@@ -92,51 +92,70 @@ class ObserverModuleController extends ActionController {
     public function indexAction() {
         $domains = $this->dataRepository->findAll();
 
+        $dataArray = [];
+        $needsUpdateList = [];
+        $eltsList = [];
+
         foreach ($domains as $key => $value) {
-            $dataArray = [];
-            $needsUpdateList = [];
-            $eltsList = [];
             // get installed data
-            $uid = $value->getUid();
-            $pid = $value->getPid();
+            // $uid = $value->getUid();
+            // $pid = $value->getPid();
+            $hidden = $value->getHidden();
             $url = $value->getUrl();
             $apiKey = $value->getApikey();
             $privateKey = $value->getPrivatekey();
             $publicKey = $value->getPublickey();
 
-            $token = $this->getJwtToken($url, $apiKey);
+            $dataArray[$url]['hidden'] = $hidden;
+            $dataArray[$url]['apikey'] = $apiKey;
+            $dataArray[$url]['privateKey'] = $privateKey;
+            $dataArray[$url]['publicKey'] = $publicKey;
 
-            if (is_string($token)) {
-                // Get info from api
-                $dataArray[$url] = $this->sendWithJwtToken($url, $token);
+            if(empty($apiKey)) {
+                // TODO: show message
+                break;
+            }
 
-                // $dataArray[$url]['uid'] = $uid;
-                // $dataArray[$url]['pid'] = $pid;
+            if(empty($publicKey) || empty($privateKey)) {
+                // TODO: show message
+                break;
+            }
+
+            if($hidden === 0) {
+                $token = $this->getJwtToken($url, $apiKey);
+
+                if (is_string($token)) {
+                    // Get info from api
+                    $dataArray[$url] = $this->sendWithJwtToken($url, $token);
+
+                    if(!empty($dataArray[$url])) {
+                        $installedVersion = $dataArray[$url]['runtime']['framework_installed_version'];
+                        $installedVersionSplit = explode('.', $installedVersion);
+
+                        // get the current/newes version of the installed version
+                        // this newestVersionData is not(!) the newest LTS version!
+                        $newestVersionData = json_decode(GeneralUtility::getURL('https://get.typo3.org/v1/api/major/'.$installedVersion[0].'/release/latest'), true);
+
+                        // check if newest verstion is higher than instelled version
+                        $dataArray[$url]['runtime']['newest_current_version'] = $newestVersionData['version'];
+                        $dataArray[$url]['runtime']['update_necessary'] = false;
+                        if (intval( str_replace('.', '', $installedVersion) ) < intval( str_replace('.', '', $newestVersionData['version']) )) {
+                            $dataArray[$url]['runtime']['update_necessary'] = true;
+
+                            $needsUpdateList[$url]['toVersion'] = $newestVersionData['version'];
+                        }
+
+                        // provide info if installed version is elts version
+                        $dataArray[$url]['runtime']['elts'] = $newestVersionData['elts'];
+                        if ($newestVersionData['elts']) {
+                            $eltsList[$url]['installedVersion'] = $installedVersion;
+                        }
+                    }
+                }
+
                 $dataArray[$url]['apikey'] = $apiKey;
-                $dataArray[$url]['privatekey'] = $privateKey;
-                $dataArray[$url]['publickey'] = $publicKey;
-
-                $installedVersion = $dataArray[$url]['runtime']['framework_installed_version'];
-                $installedVersionSplit = explode('.', $installedVersion);
-
-                // get the current/newes version of the installed version
-                // this newestVersionData is not(!) the newest LTS version!
-                $newestVersionData = json_decode(GeneralUtility::getURL('https://get.typo3.org/v1/api/major/'.$installedVersion[0].'/release/latest'), true);
-
-                // check if newest verstion is higher than instelled version
-                $dataArray[$url]['runtime']['newest_current_version'] = $newestVersionData['version'];
-                $dataArray[$url]['runtime']['update_necessary'] = false;
-                if (intval( str_replace('.', '', $installedVersion) ) < intval( str_replace('.', '', $newestVersionData['version']) )) {
-                    $dataArray[$url]['runtime']['update_necessary'] = true;
-
-                    $needsUpdateList[$url]['toVersion'] = $newestVersionData['version'];
-                }
-
-                // provide info if installed version is elts version
-                $dataArray[$url]['runtime']['elts'] = $newestVersionData['elts'];
-                if ($newestVersionData['elts']) {
-                    $eltsList[$url]['installedVersion'] = $installedVersion;
-                }
+                $dataArray[$url]['privateKey'] = $privateKey;
+                $dataArray[$url]['publicKey'] = $publicKey;
             }
         }
 
@@ -168,9 +187,9 @@ class ObserverModuleController extends ActionController {
 
         // if input of domain / URL is no domain e. g. given ddlkasdfkl <- this is no domain / URL
         if( preg_match('/((https?:\/\/|(ftp:\/\/)).*|(.*\.[^\.]{2,6})(\/.*)?)(\:.*)?$/m', $newData->getUrl()) === 1) {
+            $newData->setHidden(1);
             $this->dataRepository->add($newData);
             $this->persistenceManager->persistAll();
-            // $this->dataRepository->update($newData);
 
             $this->addFlashMessage('The object '.$newData->getUrl().' was created.', '', \TYPO3\CMS\Core\Messaging\AbstractMessage::OK);
             $this->redirect('index');
@@ -208,15 +227,24 @@ class ObserverModuleController extends ActionController {
      */
     public function updateDataAction(\GroundStack\GsMonitorObserver\Domain\Model\Data $updateData) {
         $oldEntry = $this->dataRepository->findByUrl($updateData->getUrl())[0];
-        // get skipped properties
-        $updateDataSkipped = $this->getControllerContext()->getRequest()->getArgument('updateData');
-        $newUrl = $updateDataSkipped['newUrl']; // TODO: validate domain
-        $newApiKey = $updateDataSkipped['newApikey'];
 
-        $oldEntry->setUrl($newUrl);
-        $oldEntry->setApikey($newApiKey);
+        if(!empty($oldEntry)) {
+            // get skipped properties
+            $updateDataSkipped = $this->getControllerContext()->getRequest()->getArgument('updateData');
+            $newUrl = $updateDataSkipped['newUrl']; // TODO: validate domain
+            $newApiKey = $updateDataSkipped['newApikey']; // TODO: validate apikey
 
-        $this->dataRepository->update($oldEntry);
+            $oldEntry->setUrl($newUrl);
+            $oldEntry->setApikey($newApiKey);
+
+            if($updateData->getHidden() === 1) {
+                $oldEntry->setHidden(1);
+            } else {
+                $oldEntry->setHidden(0);
+            }
+
+            $this->dataRepository->update($oldEntry);
+        }
 
         $this->redirect('index');
     }
@@ -229,7 +257,7 @@ class ObserverModuleController extends ActionController {
      * @return void
      */
     public function getJwtToken(string $url, string $apiKey) {
-        $target = $url . '/gs-monitor-api/v1/data';
+        $target = $url . '/gs-monitor-api/v1/getData';
         $additionalOptions = [
             // Additional headers for this specific request
             'headers' => [
@@ -243,6 +271,7 @@ class ObserverModuleController extends ActionController {
 
         // Return a PSR-7 compliant response object
         $response = $this->requestFactory->request($target, 'POST', $additionalOptions);
+
         if ($response->getStatusCode() === 200) {
             if (strpos($response->getHeaderLine('Content-Type'), 'application/json; charset=UTF-8') === 0) {
                 $token = $response->getHeaderLine('Authorization');
@@ -256,7 +285,7 @@ class ObserverModuleController extends ActionController {
     }
 
     public function sendWithJwtToken(string $url, string $jwtToken) {
-        $target = $url.'/gs-monitor-api/v1/data';
+        $target = $url.'/gs-monitor-api/v1/getData';
         $additionalOptions = [
             // Additional headers for this specific request
             'headers' => [
@@ -270,9 +299,12 @@ class ObserverModuleController extends ActionController {
 
         // Return a PSR-7 compliant response object
         $response = $this->requestFactory->request($target, 'POST', $additionalOptions);
+        $statusCode = $response->getStatusCode();
+        $contentType = $response->getHeaderLine('Content-Type');
+        $content = $response->getBody()->getContents();
 
-        if ($response->getStatusCode() === 200) {
-            if (strpos($response->getHeaderLine('Content-Type'), 'application/json; charset=UTF-8') === 0) {
+        if ($statusCode === 200 && !empty($content)) {
+            if (strpos($contentType, 'application/json; charset=UTF-8') === 0) {
                 $domain = $this->dataRepository->findByUrl($url)[0];
                 $private_key = $domain->getPrivatekey();
 
@@ -281,7 +313,6 @@ class ObserverModuleController extends ActionController {
 
                 openssl_private_decrypt($responseDecoded, $decrypted, $private_key);
                 $responseArray = json_decode($decrypted, true);
-
                 $responseData = openssl_decrypt(base64_decode($responseContent['encryptedData']), $responseArray['cipher'], $responseArray['password'], 0, base64_decode($responseArray['iv']));
 
                 return json_decode($responseData, true);
@@ -315,8 +346,8 @@ class ObserverModuleController extends ActionController {
             openssl_pkey_export($res, $private_key);
 
             // Extract the public key into $public_key
-            $publickey=openssl_pkey_get_details($res);
-            $publickey=$publickey["key"];
+            $publickey = openssl_pkey_get_details($res);
+            $public_key = $publickey["key"];
 
             // Write to LocalConfiguration.php
             // $objectManager = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Extbase\\Object\\ObjectManager');
