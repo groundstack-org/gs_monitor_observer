@@ -11,8 +11,15 @@
 
     <div class="monitor-observer">
         <f:form action="addNewData" name="newData" object="{newData}">
-            <f:form.textfield property="url" value="{f:if(condition: '{data.url}', then: '{data.url}', else: '')}" />
-            <f:form.textfield property="apikey" value="{f:if(condition: '{data.apikey}', then: '{data.apikey}', else: '')}" />
+            <div class="form-field field-text">
+                <label for="url">URL (full URL like https://www.domain.tld)</label>
+                <f:form.textfield id="url" property="url" value="{f:if(condition: '{data.url}', then: '{data.url}', else: '')}" />
+            </div>
+            <div class="form-field field-text">
+                <label for="apikey">API-Key</label>
+                <f:form.textfield id="apikey" property="apikey" value="{f:if(condition: '{data.apikey}', then: '{data.apikey}', else: '')}" />
+            </div>
+
             <f:form.submit name="submit" value="Submit" />
         </f:form>
     </div>

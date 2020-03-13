@@ -1,10 +1,22 @@
+# under heavy development
+## current Informations:
+
 # gs_monitor_observer
 gs_monitor_observer is a TYPO3 extension.
 A TYPO3 extension used to monitor updates for TYPO3 and all installed extensions.
+In combination with: [https://github.com/groundstack-org/gs_monitor_provider](gs_monitor_provider "Monitor Provider")
 
 ### Installation
 ... like any other TYPO3 extension [extensions.typo3.org](https://extensions.typo3.org/ "TYPO3 Extension Repository")
+- create entry with full(!) URL to your TYPO3 installation e. g. https://domain.tld and an API-key
+- then you can see this entry in the list- overview tab - there you can show and copy the public-key for gs_monitor_provider
+- after you have added all configurations for this extension and gs_monitor_provider, you can disable the hidden field.
 
+
+### Features
+- API-Key is send as HTTP-Header
+- Usage of JWT
+- Content / information is encrypted by private public key
 
 ![example picture from backend](.github/images/preview.jpg?raw=true "Title")
 
