@@ -20,6 +20,15 @@ In combination with: [https://github.com/groundstack-org/gs_monitor_provider](gs
 
 ![example picture from backend](.github/images/preview.jpg?raw=true "Title")
 
+### Erros (especially Windows)
+If the authorization header does not arrive / is not displayed in the request, the following line in Apache httpd.conf might help: - SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1
+
+If PHP cannot create a private public key (openssl_pkey_new($options)), then perhaps the path to openssl.cnf is incorrect or not set.
+This can be solved by setting the opensslCnf setting in the extension Config / Options. For example:
+- D:/MAMP/bin/apache/conf/openssl.cnf
+
+Another solution or workaround (or if the above doesn't work), copy the openssl.cnf into the folder shown to you under php.info with the parameter "Openssl default config" (if there are no such folders, just create them).
+
 ##### Copyright notice
 
 This repository is part of the TYPO3 project. The TYPO3 project is

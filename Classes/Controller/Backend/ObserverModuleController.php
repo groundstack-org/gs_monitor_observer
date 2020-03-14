@@ -7,6 +7,7 @@ use \TYPO3\CMS\Extbase\Annotation\Inject;
 use \TYPO3\CMS\Core\Utility\GeneralUtility;
 use \TYPO3\CMS\Core\Database\ConnectionPool;
 use \TYPO3\CMS\Core\Messaging\FlashMessage;
+use \TYPO3\CMS\Core\Messaging\AbstractMessage;
 
 use \TYPO3\CMS\Extbase\Mvc\View\ViewInterface;
 use TYPO3\CMS\Core\Database\RelationHandler;
@@ -30,12 +31,16 @@ use GroundStack\GsMonitorObserver\Domain\Repository\DataRepository;
 class ObserverModuleController extends ActionController {
 
     /**
-     * @var RequestFactory
+     * @var string $extensionKey
      */
-    private $requestFactory;
-
     protected $extensionKey;
-    protected $extensionConfiguration;
+
+    /**
+     * ext_conf_template config
+     *
+     * @var array $extensionConfiguration
+     */
+    protected $extensionConfiguration = [];
 
     /**
      * Persistence Manager
@@ -57,6 +62,18 @@ class ObserverModuleController extends ActionController {
      */
     protected $defaultViewObjectName = \TYPO3\CMS\Backend\View\BackendTemplateView::class;
 
+    protected $extConf;
+
+    /**
+     * @var RequestFactory
+     */
+    private $requestFactory;
+
+    public function __construct(RequestFactory $requestFactory) {
+        $this->extensionKey = 'gs_monitor_observer';
+        $this->requestFactory = $requestFactory;
+    }
+
     /**
      * Set up the doc header properly here
      *
@@ -64,17 +81,10 @@ class ObserverModuleController extends ActionController {
      * @return void
      */
     protected function initializeView(ViewInterface $view) {
-        $this->extensionKey = 'gs_monitor_observer';
         // Typo3 extension manager gearwheel icon (ext_conf_template.txt)
         $this->extensionConfiguration = $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS'][$this->extensionKey];
 
         $this->view->assign('script', 'T3_THIS_LOCATION = ' . GeneralUtility::quoteJSvalue(rawurlencode(GeneralUtility::getIndpEnv('REQUEST_URI'))) . ";");
-    }
-
-    protected $extConf;
-
-    public function __construct(RequestFactory $requestFactory) {
-        $this->requestFactory = $requestFactory;
     }
 
     /**
@@ -192,11 +202,11 @@ class ObserverModuleController extends ActionController {
             $this->dataRepository->add($newData);
             $this->persistenceManager->persistAll();
 
-            $this->addFlashMessage('The object '.$newData->getUrl().' was created.', '', \TYPO3\CMS\Core\Messaging\AbstractMessage::OK);
+            $this->addFlashMessage('The object '.$newData->getUrl().' was created.', '', AbstractMessage::OK);
             $this->redirect('index');
         }
 
-        $this->addFlashMessage('The object was not created. Domain / URL wrong, must be like https://www.domain.tld!', '', \TYPO3\CMS\Core\Messaging\AbstractMessage::ERROR);
+        $this->addFlashMessage('The object was not created. Domain / URL wrong, must be like https://www.domain.tld!', '', AbstractMessage::ERROR);
         $this->forward(
             'newData',
             NULL,
@@ -356,17 +366,21 @@ class ObserverModuleController extends ActionController {
                 'private_key_type' => OPENSSL_KEYTYPE_RSA,
             ];
 
+            if (!empty($this->extensionConfiguration['openssl']['opensslCnf'])) {
+                $config['config'] = $this->extensionConfiguration['openssl']['opensslCnf'];
+            }
+
             // Create the private and public key
             $res = openssl_pkey_new($config);
 
             if($res === false) {
+                $this->addFlashMessage('Can not generate key with "openssl_pkey_new"!', '', AbstractMessage::ERROR);
+
                 $this->forward(
                     'index',
                     NULL,
                     NULL,
-                    [
-                        'error' => 'Can not generate key with "openssl_pkey_new"!'
-                    ]
+                    []
                 );
 
                 return;
@@ -375,9 +389,22 @@ class ObserverModuleController extends ActionController {
             // Extract the private key into $private_key
             openssl_pkey_export($res, $private_key);
 
+            if (empty($private_key)) {
+                $this->addFlashMessage('Can not create private-key with "openssl_pkey_export" Look at readme!', '', AbstractMessage::ERROR);
+                
+                $this->forward(
+                    'index',
+                    NULL,
+                    NULL,
+                    []
+                );
+
+                return;
+            }
+
             // Extract the public key into $public_key
             $publickey = openssl_pkey_get_details($res);
-            $public_key = $publickey["key"];
+            $public_key = $publickey['key'];
 
             // Write to LocalConfiguration.php
             // $objectManager = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\\CMS\\Extbase\\Object\\ObjectManager');
@@ -405,13 +432,13 @@ class ObserverModuleController extends ActionController {
             );
         }
 
+        $this->addFlashMessage('No key generated!', '', AbstractMessage::ERROR);
+
         $this->forward(
             'index',
             NULL,
             NULL,
-            [
-                'error' => 'No key generated'
-            ]
+            []
         );
     }
 }

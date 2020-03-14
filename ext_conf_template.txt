@@ -1,0 +1,4 @@
+openssl {
+    # cat=basic/enable; type=string; label=Path to your openssl.cnf (Only if you have truble and know what you are doing!)
+    opensslCnf = 
+}
