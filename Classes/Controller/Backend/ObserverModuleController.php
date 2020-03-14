@@ -115,12 +115,12 @@ class ObserverModuleController extends ActionController {
 
             if(empty($apiKey)) {
                 // TODO: show message
-                break;
+                continue;
             }
 
             if(empty($publicKey) || empty($privateKey)) {
                 // TODO: show message
-                break;
+                continue;
             }
 
             if($hidden === 0) {
@@ -235,8 +235,23 @@ class ObserverModuleController extends ActionController {
             $newUrl = $updateDataSkipped['newUrl']; // TODO: validate domain
             $newApiKey = $updateDataSkipped['newApikey']; // TODO: validate apikey
 
-            $oldEntry->setUrl($newUrl);
-            $oldEntry->setApikey($newApiKey);
+            if (!empty($newUrl)) {
+                $oldEntry->setUrl($newUrl);
+            }
+
+            if(!empty($newApiKey)) {
+                $oldEntry->setApikey($newApiKey);
+            }
+
+            if (!empty($updateData->getPrivatekey())) {
+                $oldEntry->setPrivatekey($updateData->getPrivatekey());
+                $oldEntry->setHidden(1);
+            }
+
+            if (!empty($updateData->getPublickey())) {
+                $oldEntry->setPublickey($updateData->getPublickey());
+                $oldEntry->setHidden(1);
+            }
 
             if($updateData->getHidden() === 1) {
                 $oldEntry->setHidden(1);
@@ -272,6 +287,7 @@ class ObserverModuleController extends ActionController {
 
         // Return a PSR-7 compliant response object
         $response = $this->requestFactory->request($target, 'POST', $additionalOptions);
+        $content = $response->getBody()->getContents();
 
         if ($response->getStatusCode() === 200) {
             if (strpos($response->getHeaderLine('Content-Type'), 'application/json; charset=UTF-8') === 0) {
@@ -334,14 +350,27 @@ class ObserverModuleController extends ActionController {
 
         if(!empty($url)) {
             // Configuration settings for the key
-            $config = array(
+            $config = [
                 'digest_alg' => 'sha512',
                 'private_key_bits' => 4096,
                 'private_key_type' => OPENSSL_KEYTYPE_RSA,
-            );
+            ];
 
             // Create the private and public key
             $res = openssl_pkey_new($config);
+
+            if($res === false) {
+                $this->forward(
+                    'index',
+                    NULL,
+                    NULL,
+                    [
+                        'error' => 'Can not generate key with "openssl_pkey_new"!'
+                    ]
+                );
+
+                return;
+            } 
 
             // Extract the private key into $private_key
             openssl_pkey_export($res, $private_key);

@@ -8,54 +8,9 @@
     <f:flashMessages />
 
     <div class="monitor-observer">
-        <div class="needs-update-list">
-            <table>
-                <caption>Needs Update</caption>
-                <thead>
-                    <tr>
-                        <th scope="col">Domain</th>
-                        <th scope="col">New Version</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <f:for each="{needsUpdateList}" as="domain" key="label" iteration="i">
-                        <tr>
-                            <td data-label="Domain">
-                                {label}
-                            </td>
-                            <td data-label="New Version">
-                                {domain.toVersion}
-                            </td>
-                        </tr>
-                    </f:for>
-                </tbody>
-            </table>
-        </div>
+        <f:render partial="Backend/NeedsUpdate" arguments="{needsUpdateList: needsUpdateList}" />
 
-        <div class="outdated-versions">
-            <f:comment>TODO: show newset LTS version</f:comment>
-            <table>
-                <caption>Outdated Versions</caption>
-                <thead>
-                    <tr>
-                        <th scope="col">Domain</th>
-                        <th scope="col">old Version</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <f:for each="{eltsList}" as="domain" key="label" iteration="i">
-                        <tr>
-                            <td data-label="Domain">
-                                {label}
-                            </td>
-                            <td data-label="New Version">
-                                {domain.installedVersion}
-                            </td>
-                        </tr>
-                    </f:for>
-                </tbody>
-            </table>
-        </div>
+        <f:render partial="Backend/OutdatedVersions" arguments="{eltsList: eltsList}" />
 
         <f:comment>TODO: make accordion</f:comment>
         <br><br><br><br>
@@ -92,10 +47,26 @@
                     <p>Public-Key for usage with EXT: gs_monitor_observer</p>
                     <f:link.action action="newKeyPair" arguments="{url: '{arrayKey}'}">Generate new Private/Public key pair.</f:link.action>
                     <f:if condition="{domain.publicKey}">
-                        <button class="accordion accordion-key">Show keys</button>
-                        <div class="panel">
-                            <pre>{domain.publicKey}</pre>
-                        </div>
+                        <f:then>
+                            <button class="accordion accordion-key">Show keys</button>
+                            <div class="panel">
+                                <pre>{domain.publicKey}</pre>
+                            </div>
+                        </f:then>
+                        <f:else>
+                            <f:form action="updateData" name="updateData" object="{updateData}">
+                                <f:form.hidden property="url" value="{arrayKey}" />
+                                <div class="form-field field-textarea">
+                                    <label for="publicKey">public-key</label>
+                                    <f:form.textarea id="publicKey" property="publickey" rows="" cols="" />
+                                </div>
+                                <div class="form-field field-textarea">
+                                    <label for="privateKey">private-key</label>
+                                    <f:form.textarea id="privateKey" property="privatekey" rows="" cols="" />
+                                </div>
+                                <f:form.submit name="Submit" value="Submit" />
+                            </f:form>
+                        </f:else>
                     </f:if>
                 </div>
 

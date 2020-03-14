@@ -1,0 +1,30 @@
+<html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers"
+    data-namespace-typo3-fluid="true">
+
+<f:if condition="{needsUpdateList}">
+    <div class="needs-update-list">
+        <table>
+            <caption>Needs Update</caption>
+            <thead>
+                <tr>
+                    <th scope="col">Domain</th>
+                    <th scope="col">New Version</th>
+                </tr>
+            </thead>
+            <tbody>
+                <f:for each="{needsUpdateList}" as="domain" key="label" iteration="i">
+                    <tr>
+                        <td data-label="Domain">
+                            {label}
+                        </td>
+                        <td data-label="New Version">
+                            {domain.toVersion}
+                        </td>
+                    </tr>
+                </f:for>
+            </tbody>
+        </table>
+    </div>
+</f:if>
+
+</html>
