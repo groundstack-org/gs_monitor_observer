@@ -13,71 +13,77 @@
         <f:render partial="Backend/OutdatedVersions" arguments="{eltsList: eltsList}" />
 
         <f:comment>TODO: make accordion</f:comment>
-        <br><br><br><br>
-        <f:for each="{data}" as="domain" key="arrayKey" iteration="i">
-            <div class="content">
-                <header>
-                    <a href="{arrayKey}" class="h1" title="Call up the domain: {arrayKey}." target="_blank"><f:format.raw>{domain.shortUrl}</f:format.raw></a>
-                    <a href="{arrayKey}/typo3" class="h2" title="Call up the domain backend: {arrayKey}." target="_blank"><f:format.raw>Backend</f:format.raw></a>
-                </header>
-
-                <div class="update">
-                    <f:form action="updateData" name="updateData" object="{updateData}">
-                        <f:form.hidden property="url" value="{arrayKey}" />
-                        <f:form.hidden property="apikey" value="{domain.apikey}" />
-
-                        <div class="form-field field-text">
-                            <f:form.textfield type="text" property="newUrl"  value="{arrayKey}" />
-                        </div>
-
-                        <div class="form-field field-text">
-                            <f:form.textfield type="text" property="newApikey" value="{domain.apikey}" />
-                        </div>
-
-                        <div class="form-field field-checkbox">
-                            <label for="d-{i.cycle}-hidden">Hidden</label>
-                            <f:form.checkbox id="d-{i.cycle}-hidden" property="hidden" value="1" checked="{domain.hidden} == 1" />
-                        </div>
-
-                        <f:form.submit name="submit" value="Edit this entry" />
-                    </f:form>
-                </div>
-
-                <div class="keys">
-                    <p>Public-Key for usage with EXT: gs_monitor_observer</p>
-                    <f:link.action action="newKeyPair" arguments="{url: '{arrayKey}'}">Generate new Private/Public key pair.</f:link.action>
-                    <f:if condition="{domain.publicKey}">
-                        <f:then>
-                            <button class="accordion accordion-key">Show keys</button>
-                            <div class="panel">
-                                <pre>{domain.publicKey}</pre>
+        
+        <f:if condition="{data}">
+            <br><br><br><br>
+            <f:for each="{data}" as="domain" key="arrayKey" iteration="i">
+                <div class="content">
+                    <header>
+                        <a href="{arrayKey}" class="h1" title="Call up the domain: {arrayKey}." target="_blank"><f:format.raw>{domain.shortUrl}</f:format.raw></a>
+                        <a href="{arrayKey}/typo3" class="h2" title="Call up the domain backend: {arrayKey}." target="_blank"><f:format.raw>Backend</f:format.raw></a>
+                        <f:if condition="{domain.apiInfo.time}">
+                            <p>Last fetched time: <f:format.date format="%d. %B %Y">{domain.apiInfo.time}</f:format.date></p>
+                        </f:if>
+                    </header>
+    
+                    <div class="update">
+                        <f:form action="updateData" name="updateData" object="{updateData}">
+                            <f:form.hidden property="url" value="{arrayKey}" />
+                            <f:form.hidden property="apikey" value="{domain.apikey}" />
+    
+                            <div class="form-field field-text">
+                                <f:form.textfield type="text" property="newUrl"  value="{arrayKey}" />
                             </div>
-                        </f:then>
-                        <f:else>
-                            <f:form action="updateData" name="updateData" object="{updateData}">
-                                <f:form.hidden property="url" value="{arrayKey}" />
-                                <div class="form-field field-textarea">
-                                    <label for="publicKey">public-key</label>
-                                    <f:form.textarea id="publicKey" property="publickey" rows="" cols="" />
+    
+                            <div class="form-field field-text">
+                                <f:form.textfield type="text" property="newApikey" value="{domain.apikey}" />
+                            </div>
+    
+                            <div class="form-field field-checkbox">
+                                <label for="d-{i.cycle}-hidden">Hidden</label>
+                                <f:form.checkbox id="d-{i.cycle}-hidden" property="hidden" value="1" checked="{domain.hidden} == 1" />
+                            </div>
+    
+                            <f:form.submit name="submit" value="Edit this entry" />
+                        </f:form>
+                    </div>
+    
+                    <div class="keys">
+                        <p>Public-Key for usage with EXT: gs_monitor_observer</p>
+                        <f:link.action action="newKeyPair" arguments="{url: '{arrayKey}'}">Generate new Private/Public key pair.</f:link.action>
+                        <f:if condition="{domain.publicKey}">
+                            <f:then>
+                                <button class="accordion accordion-key">Show keys</button>
+                                <div class="panel">
+                                    <pre>{domain.publicKey}</pre>
                                 </div>
-                                <div class="form-field field-textarea">
-                                    <label for="privateKey">private-key</label>
-                                    <f:form.textarea id="privateKey" property="privatekey" rows="" cols="" />
-                                </div>
-                                <f:form.submit name="Submit" value="Submit" />
-                            </f:form>
-                        </f:else>
+                            </f:then>
+                            <f:else>
+                                <f:form action="updateData" name="updateData" object="{updateData}">
+                                    <f:form.hidden property="url" value="{arrayKey}" />
+                                    <div class="form-field field-textarea">
+                                        <label for="publicKey">public-key</label>
+                                        <f:form.textarea id="publicKey" property="publickey" rows="" cols="" />
+                                    </div>
+                                    <div class="form-field field-textarea">
+                                        <label for="privateKey">private-key</label>
+                                        <f:form.textarea id="privateKey" property="privatekey" rows="" cols="" />
+                                    </div>
+                                    <f:form.submit name="Submit" value="Submit" />
+                                </f:form>
+                            </f:else>
+                        </f:if>
+                    </div>
+    
+                    <f:if condition="{domain.apiInfo.environment.runtime.platform} || {domain.apiInfo.environment.modules}">
+                        <button class="accordion accordion-domain">Show more info</button>
+                        <div class="panel">
+                            <f:render partial="Backend/SystemInfo" arguments="{info: domain.apiInfo}" />
+                        </div>
                     </f:if>
                 </div>
-
-                <f:if condition="{domain.apiInfo.runtime.platform} || {domain.apiInfo.modules}">
-                    <button class="accordion accordion-domain">Show more info</button>
-                    <div class="panel">
-                        <f:render partial="Backend/SystemInfo" arguments="{domain: domain.apiInfo}" />
-                    </div>
-                </f:if>
-            </div>
-        </f:for>
+            </f:for>
+        </f:if>
     </div>
 
     <style>
@@ -249,7 +255,7 @@
                 }
             });
         }
-        </script>
+    </script>
 </f:section>
 
 </html>

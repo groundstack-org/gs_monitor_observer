@@ -15,18 +15,47 @@
         <tbody>
             <tr>
                 <td data-label="Platform">
-                    <f:format.raw>{domain.runtime.platform}</f:format.raw> - <f:format.raw>
-                        {domain.runtime.platform_version}</f:format.raw>
+                    <f:format.raw>{info.environment.runtime.platform}</f:format.raw> - <f:format.raw>
+                        {info.environment.runtime.platform_version}</f:format.raw>
                 </td>
                 <td data-label="Framework">
-                    <f:format.raw>{domain.runtime.framework}</f:format.raw> - <f:format.raw>
-                        {domain.runtime.framework_installed_version}</f:format.raw>
+                    <f:format.raw>{info.environment.runtime.framework}</f:format.raw> - <f:format.raw>
+                        {info.environment.runtime.framework_installed_version}</f:format.raw>
                 </td>
-                <td data-label="New Version" class="newest-version {f:if(condition: '{domain.runtime.elts}', then: 'error')} {f:if(condition: '{domain.runtime.update_necessary}', then: 'warning', else: '')}">
-                    <f:format.raw>{domain.runtime.newest_current_version}</f:format.raw>
+                <td data-label="New Version" class="newest-version {f:if(condition: '{info.environment.runtime.elts}', then: 'error')} {f:if(condition: '{info.environment.runtime.update_necessary}', then: 'warning', else: '')}">
+                    <f:format.raw>{info.environment.runtime.newest_current_version}</f:format.raw>
                 </td>
-                <td data-label="New Version" class="newest-version {f:if(condition: '{domain.runtime.update_necessary} && {domain.runtime.elts}', then: 'error')}">
-                    <f:format.raw>{domain.runtime.framework_newest_version}</f:format.raw>
+                <td data-label="New Version" class="newest-version {f:if(condition: '{info.environment.runtime.update_necessary} && {info.environment.runtime.elts}', then: 'error')}">
+                    <f:format.raw>{info.environment.runtime.framework_newest_version}</f:format.raw>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    <br>
+    <table>
+        <thead>
+            <tr>
+                <th scope="col">Composer</th>
+                <th scope="col">ELTS</th>
+                <th scope="col">Database version</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td data-label="Composer">
+                    <f:if condition="{info.environment.runtime.composer}">
+                        <f:then>true</f:then>
+                        <f:else>false</f:else>
+                    </f:if>
+                </td>
+                <td data-label="ELTS">
+                    <f:if condition="{info.environment.runtime.elts}">
+                        <f:then>true</f:then>
+                        <f:else>false</f:else>
+                    </f:if>
+                </td>
+                <td data-label="Database version">
+                    <f:format.raw>{info.environment.runtime.database.version}</f:format.raw>
                 </td>
             </tr>
         </tbody>
@@ -44,7 +73,7 @@
             </tr>
         </thead>
         <tbody>
-            <f:for each="{domain.modules}" as="module" iteration="i">
+            <f:for each="{info.environment.modules}" as="module" iteration="i">
                 <tr>
                     <td data-label="Extension">
                         <f:format.raw>{module.name}</f:format.raw>

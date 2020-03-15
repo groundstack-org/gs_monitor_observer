@@ -141,7 +141,7 @@ class ObserverModuleController extends ActionController {
                     $apiInfo = $this->sendWithJwtToken($url, $token);
 
                     if(!empty($apiInfo)) {
-                        $installedVersion = $apiInfo['runtime']['framework_installed_version'];
+                        $installedVersion = $apiInfo['environment']['runtime']['framework_installed_version'];
                         $installedVersionSplit = explode('.', $installedVersion);
 
                         // get the current/newes version of the installed version
@@ -149,16 +149,16 @@ class ObserverModuleController extends ActionController {
                         $newestVersionData = json_decode(GeneralUtility::getURL('https://get.typo3.org/v1/api/major/'.$installedVersion[0].'/release/latest'), true);
 
                         // check if newest verstion is higher than instelled version
-                        $apiInfo['runtime']['newest_current_version'] = $newestVersionData['version'];
-                        $apiInfo['runtime']['update_necessary'] = false;
+                        $apiInfo['environment']['runtime']['newest_current_version'] = $newestVersionData['version'];
+                        $apiInfo['environment']['runtime']['update_necessary'] = false;
                         if (intval( str_replace('.', '', $installedVersion) ) < intval( str_replace('.', '', $newestVersionData['version']) )) {
-                            $apiInfo['runtime']['update_necessary'] = true;
+                            $apiInfo['environment']['runtime']['update_necessary'] = true;
 
                             $needsUpdateList[$url]['toVersion'] = $newestVersionData['version'];
                         }
 
                         // provide info if installed version is elts version
-                        $apiInfo['runtime']['elts'] = $newestVersionData['elts'];
+                        $apiInfo['environment']['runtime']['elts'] = $newestVersionData['elts'];
                         if ($newestVersionData['elts']) {
                             $eltsList[$url]['installedVersion'] = $installedVersion;
                         }
