@@ -20,7 +20,7 @@ In combination with: [https://github.com/groundstack-org/gs_monitor_provider](gs
 
 ![example picture from backend](.github/images/preview.jpg?raw=true "Title")
 
-### Erros (especially Windows)
+### Errors (especially Windows)
 If the authorization header does not arrive / is not displayed in the request, the following line in Apache httpd.conf might help: - SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1
 
 If PHP cannot create a private public key (openssl_pkey_new($options)), then perhaps the path to openssl.cnf is incorrect or not set.
@@ -28,6 +28,12 @@ This can be solved by setting the opensslCnf setting in the extension Config / O
 - D:/MAMP/bin/apache/conf/openssl.cnf
 
 Another solution or workaround (or if the above doesn't work), copy the openssl.cnf into the folder shown to you under php.info with the parameter "Openssl default config" (if there are no such folders, just create them).
+
+For MAMP (PRO) you can try add 'FcgidInitialEnv OPENSSL_CONF "C:\\path-to-your\\openssl.cnf"' to your apache httpd.conf.
+
+Sometimes the path to the "cacert.pem" file is missing - especially when there is an error like
+"cURL error 60: SSL certificate problem: unable to get local issuer certificate"
+Then simply download the pem file ("https://curl.haxx.se/docs/caextract.html") and put e.g. "C:\xampp\php\extras\ssl\cacert.pem" here, now you have to enter the path to this file in the PHP.ini: 'curl.cainfo = "C:\xampp\php\extras\ssl\cacert.pem"', then apache restart and it should work.
 
 ##### Copyright notice
 
