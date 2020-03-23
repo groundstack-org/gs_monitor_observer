@@ -21,7 +21,8 @@ In combination with: [https://github.com/groundstack-org/gs_monitor_provider](gs
 ![example picture from backend](.github/images/preview.jpg?raw=true "Title")
 
 ### Errors (especially Windows)
-If the authorization header does not arrive / is not displayed in the request, the following line in Apache httpd.conf might help: - SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1
+If the authorization header does not arrive / is not displayed in the request, the following line in Apache httpd.conf / htaccess might help (on provider side!):
+- SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1
 
 If PHP cannot create a private public key (openssl_pkey_new($options)), then perhaps the path to openssl.cnf is incorrect or not set.
 This can be solved by setting the opensslCnf setting in the extension Config / Options. For example:
