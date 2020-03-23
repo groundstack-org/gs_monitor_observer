@@ -1,4 +1,11 @@
+config {
+    debug {
+        # cat=basic/enable; type=boolean; label=Output errors at the backend module
+        outputErrors = 0
+    }
+}
+
 openssl {
     # cat=basic/enable; type=string; label=Path to your openssl.cnf (Only if you have truble and know what you are doing!)
-    opensslCnf = 
+    opensslCnf =
 }

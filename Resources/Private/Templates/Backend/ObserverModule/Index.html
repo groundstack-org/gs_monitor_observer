@@ -8,53 +8,67 @@
     <f:flashMessages />
 
     <div class="monitor-observer">
-        <f:render partial="Backend/NeedsUpdate" arguments="{needsUpdateList: needsUpdateList}" />
 
-        <f:render partial="Backend/OutdatedVersions" arguments="{eltsList: eltsList}" />
+        <div class="row">
+            <div class="col-md-6">
+                <f:render partial="Backend/NeedsUpdate" arguments="{needsUpdateList: needsUpdateList}" />
+            </div>
 
-        <f:comment>TODO: make accordion</f:comment>
-        
+            <div class="col-md-6">
+                <f:render partial="Backend/OutdatedVersions" arguments="{eltsList: eltsList}" />
+            </div>
+        </div>
+
+        <f:render partial="Backend/ErrorsTable" arguments="{errors: errors}" />
+
         <f:if condition="{data}">
             <br><br><br><br>
             <f:for each="{data}" as="domain" key="arrayKey" iteration="i">
-                <div class="content">
+                <div class="content well {f:if(condition: '{domain.hidden} == 1', then: 'hide-custom')}">
                     <header>
+                        <f:if condition="{domain.messages}">
+                            <span class="label label-warning">Warning have messages</span>
+                        </f:if>
+
                         <a href="{arrayKey}" class="h1" title="Call up the domain: {arrayKey}." target="_blank"><f:format.raw>{domain.shortUrl}</f:format.raw></a>
-                        <a href="{arrayKey}/typo3" class="h2" title="Call up the domain backend: {arrayKey}." target="_blank"><f:format.raw>Backend</f:format.raw></a>
+                        <a href="{arrayKey}/typo3" class="btn btn-default" title="Call up the domain backend: {arrayKey}." target="_blank"><f:format.raw>Backend</f:format.raw></a>
+
                         <f:if condition="{domain.apiInfo.time}">
-                            <p>Last fetched time: <f:format.date format="%d. %B %Y">{domain.apiInfo.time}</f:format.date></p>
+                            <p class="time">Last fetched time: <f:format.date format="%d. %B %Y">{domain.apiInfo.time}</f:format.date></p>
                         </f:if>
                     </header>
-    
+
                     <div class="update">
                         <f:form action="updateData" name="updateData" object="{updateData}">
                             <f:form.hidden property="url" value="{arrayKey}" />
                             <f:form.hidden property="apikey" value="{domain.apikey}" />
-    
+
                             <div class="form-field field-text">
                                 <f:form.textfield type="text" property="newUrl"  value="{arrayKey}" />
                             </div>
-    
+
                             <div class="form-field field-text">
                                 <f:form.textfield type="text" property="newApikey" value="{domain.apikey}" />
                             </div>
-    
+
                             <div class="form-field field-checkbox">
                                 <label for="d-{i.cycle}-hidden">Hidden</label>
                                 <f:form.checkbox id="d-{i.cycle}-hidden" property="hidden" value="1" checked="{domain.hidden} == 1" />
                             </div>
-    
+
                             <f:form.submit name="submit" value="Edit this entry" />
                         </f:form>
                     </div>
-    
+
                     <div class="keys">
                         <p>Public-Key for usage with EXT: gs_monitor_observer</p>
-                        <f:link.action action="newKeyPair" arguments="{url: '{arrayKey}'}">Generate new Private/Public key pair.</f:link.action>
+
+                        <f:link.action class="btn btn-default btn-xs" action="newKeyPair" arguments="{url: '{arrayKey}'}">Generate new Private/Public key pair.</f:link.action>
+
                         <f:if condition="{domain.publicKey}">
                             <f:then>
-                                <button class="accordion accordion-key">Show keys</button>
-                                <div class="panel">
+                                <button class="accordion btn btn-default btn-xs">Show keys</button>
+                                <div class="accordion-content">
                                     <pre>{domain.publicKey}</pre>
                                 </div>
                             </f:then>
@@ -74,11 +88,29 @@
                             </f:else>
                         </f:if>
                     </div>
-    
+
                     <f:if condition="{domain.apiInfo.environment.runtime.platform} || {domain.apiInfo.environment.modules}">
-                        <button class="accordion accordion-domain">Show more info</button>
-                        <div class="panel">
+                        <button class="accordion btn btn-info">Show more info</button>
+                        <div class="accordion-content">
                             <f:render partial="Backend/SystemInfo" arguments="{info: domain.apiInfo}" />
+                        </div>
+                    </f:if>
+
+                    <f:if condition="{domain.messages}">
+                        <button class="accordion btn btn-warning">Messages</button>
+                        <div class="accordion-content messages">
+                            <f:for each="{domain.messages}" as="message" key="messageType">
+                                <f:for each="{message}" as="mess" iteration="i">
+                                    <div class='{messageType}
+                                        <f:switch expression="{messageType}">
+                                            <f:case value="errors">bg-danger</f:case>
+                                            <f:defaultCase></f:defaultCase>
+                                        </f:switch>'>
+
+                                        {mess.message}
+                                    </div>
+                                </f:for>
+                            </f:for>
                         </div>
                     </f:if>
                 </div>
@@ -118,6 +150,10 @@
             font-size: .85em;
             letter-spacing: .1em;
             text-transform: uppercase;
+        }
+
+        .monitor-observer .content table {
+            max-width: 1200px;
         }
 
         @media screen and (max-width: 600px) {
@@ -170,27 +206,7 @@
         }
 
         /* accordion */
-        .monitor-observer .accordion {
-            background-color: #eee;
-            color: #444;
-            cursor: pointer;
-            padding: 18px;
-            width: 100%;
-            border: none;
-            text-align: left;
-            outline: none;
-            font-size: 15px;
-            transition: 0.4s;
-        }
-
-        .monitor-observer .active,
-        .monitor-observer .accordion:hover {
-            background-color: #ccc;
-        }
-
-        .monitor-observer .panel {
-            padding: 0 18px;
-            background-color: white;
+        .monitor-observer .accordion-content {
             max-height: 0;
             overflow: hidden;
             transition: max-height 0.2s ease-out;
@@ -205,10 +221,23 @@
             background-color: red;
         }
 
-        .monitor-observer .content {
-            border: 1px solid;
-            padding: 20px;
-            margin: 20px 0;
+        .monitor-observer .content header {
+            position: relative;
+        }
+
+        .monitor-observer .content header .h1 {
+            display: inline-block;
+            vertical-align: middle;
+        }
+
+        .monitor-observer .content header .time {
+            position: absolute;
+            top: 0;
+            right: 0;
+        }
+
+        .monitor-observer .content.hide-custom {
+            opacity: 0.5;
         }
 
         .monitor-observer .content .h1,
@@ -217,8 +246,9 @@
             margin-top: 0;
         }
 
-        .monitor-observer .update {
-            margin-bottom: 40px;
+        .monitor-observer .update,
+        .monitor-observer .keys {
+            margin-bottom: 20px;
             margin-top: 20px;
         }
 
@@ -227,25 +257,11 @@
         }
     </style>
     <script>
-        var acc = document.getElementsByClassName("accordion-domain");
+        var acc = document.querySelectorAll(".btn.accordion");
         var i;
 
         for (i = 0; i < acc.length; i++) {
                 acc[i].addEventListener("click", function() {
-                this.classList.toggle("active");
-                var panel = this.nextElementSibling;
-                if (panel.style.maxHeight) {
-                    panel.style.maxHeight = null;
-                } else {
-                    panel.style.maxHeight = panel.scrollHeight + "px";
-                }
-            });
-        }
-
-        var accKey = document.getElementsByClassName("accordion-key");
-        var iKey;
-        for (iKey = 0; iKey < accKey.length; iKey++) {
-                accKey[iKey].addEventListener("click", function() {
                 this.classList.toggle("active");
                 var panel = this.nextElementSibling;
                 if (panel.style.maxHeight) {

@@ -1,11 +1,12 @@
 <html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers"
     data-namespace-typo3-fluid="true">
 
-<div class="needs-update-list">
+<div class="needs-update-list panel panel-{f:if(condition: '{needsUpdateList}', then: 'default', else: 'success')}">
+    <div class="panel-heading">Needs Update</div>
+
     <f:if condition="{needsUpdateList}">
         <f:then>
             <table>
-                <caption>Needs Update</caption>
                 <thead>
                     <tr>
                         <th scope="col">Domain</th>
@@ -28,7 +29,6 @@
         </f:then>
         <f:else>
             <table>
-                <caption>Needs Update</caption>
                 <thead>
                     <tr>
                         <th scope="col">Domain</th>

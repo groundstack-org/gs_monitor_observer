@@ -1,0 +1,43 @@
+<html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers"
+    data-namespace-typo3-fluid="true">
+
+<f:if condition="{errors}">
+    <div class="errors">
+        <f:for each="{errors}" as="error" key="key">
+            <div class="error">
+                <header></header>
+                <table>
+                    <caption>{key}</caption>
+                    <thead>
+                        <tr>
+                            <th scope="col">Message</th>
+                            <th scope="col">Code</th>
+                            <th scope="col">File</th>
+                            <th scope="col">Line</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <f:for each="{error}" as="err">
+                            <tr>
+                                <td data-label="Message">
+                                    {err.message}
+                                </td>
+                                <td data-label="Code">
+                                    {err.code}
+                                </td>
+                                <td data-label="File">
+                                    {err.file}
+                                </td>
+                                <td data-label="Line">
+                                    {err.line}
+                                </td>
+                            </tr>
+                        </f:for>
+                    </tbody>
+                </table>
+            </div>
+        </f:for>
+    </div>
+</f:if>
+
+</html>

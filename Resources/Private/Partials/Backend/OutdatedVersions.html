@@ -1,12 +1,13 @@
 <html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers"
     data-namespace-typo3-fluid="true">
 
-<div class="outdated-versions">
+<div class="outdated-versions panel panel-{f:if(condition: '{needsUpdateList}', then: 'default', else: 'success')}">
+    <div class="panel-heading">Outdated Versions</div>
+
     <f:if condition="{eltsList}">
         <f:then>
             <f:comment>TODO: show newset LTS version</f:comment>
             <table>
-                <caption>Outdated Versions</caption>
                 <thead>
                     <tr>
                         <th scope="col">Domain</th>
@@ -29,7 +30,6 @@
         </f:then>
         <f:else>
             <table>
-                <caption>Outdated Versions</caption>
                 <thead>
                     <tr>
                         <th scope="col">Domain</th>

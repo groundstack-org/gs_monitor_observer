@@ -65,6 +65,20 @@ class ObserverModuleController extends ActionController {
     protected $extConf;
 
     /**
+     * logger
+     *
+     * @var \TYPO3\CMS\Core\Log\Logger $logger
+     */
+    protected $logger;
+
+    /**
+     * errors
+     *
+     * @var array $errors
+     */
+    protected $errors = [];
+
+    /**
      * @var RequestFactory
      */
     private $requestFactory;
@@ -81,6 +95,8 @@ class ObserverModuleController extends ActionController {
      * @return void
      */
     protected function initializeView(ViewInterface $view) {
+        $this->logger = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Log\LogManager::class)->getLogger(__CLASS__);
+
         // Typo3 extension manager gearwheel icon (ext_conf_template.txt)
         $this->extensionConfiguration = $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS'][$this->extensionKey];
 
@@ -107,6 +123,7 @@ class ObserverModuleController extends ActionController {
         $eltsList = [];
 
         foreach ($domains as $key => $value) {
+            $apiInfo = [];
             // get installed data
             // $uid = $value->getUid();
             // $pid = $value->getPid();
@@ -163,11 +180,18 @@ class ObserverModuleController extends ActionController {
                             $eltsList[$url]['installedVersion'] = $installedVersion;
                         }
 
-
                         $dataArray[$url]['apiInfo'] = $apiInfo;
                     }
                 }
+
+                if(!empty($this->errors[$url])) {
+                    $dataArray[$url]['messages']['errors'] = $this->errors[$url];
+                }
             }
+        }
+
+        if ($this->extensionConfiguration['config']['debug']['outputErrors']) {
+            $this->view->assign('errors', $this->errors);
         }
 
         $this->view->assignMultiple([
@@ -296,16 +320,29 @@ class ObserverModuleController extends ActionController {
         ];
 
         // Return a PSR-7 compliant response object
-        $response = $this->requestFactory->request($target, 'POST', $additionalOptions);
-        $content = $response->getBody()->getContents();
+        try {
+            $response = $this->requestFactory->request($target, 'POST', $additionalOptions);
+            $content = $response->getBody()->getContents();
 
-        if ($response->getStatusCode() === 200) {
-            if (strpos($response->getHeaderLine('Content-Type'), 'application/json; charset=UTF-8') === 0) {
-                $token = $response->getHeaderLine('Authorization');
-                if (!empty($token)) {
-                    return $token;
+            if ($response->getStatusCode() === 200) {
+                if (strpos($response->getHeaderLine('Content-Type'), 'application/json; charset=UTF-8') === 0) {
+                    $token = $response->getHeaderLine('Authorization');
+                    if (!empty($token)) {
+                        return $token;
+                    }
                 }
             }
+        } catch (\Throwable $e) {
+            $this->errors[$url][] = $e;
+            $this->logger->error(
+                $url . ': ' . $e->getMessage(),
+                [
+                    'status-code' => $e->getCode(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine()
+                ]
+            );
+            return false;
         }
 
         return false;
@@ -325,25 +362,39 @@ class ObserverModuleController extends ActionController {
         ];
 
         // Return a PSR-7 compliant response object
-        $response = $this->requestFactory->request($target, 'POST', $additionalOptions);
-        $statusCode = $response->getStatusCode();
-        $contentType = $response->getHeaderLine('Content-Type');
-        $content = $response->getBody()->getContents();
+        try {
+            $response = $this->requestFactory->request($target, 'POST', $additionalOptions);
+            $statusCode = $response->getStatusCode();
 
-        if ($statusCode === 200 && !empty($content)) {
-            if (strpos($contentType, 'application/json; charset=UTF-8') === 0) {
-                $domain = $this->dataRepository->findByUrl($url)[0];
-                $private_key = $domain->getPrivatekey();
+            $contentType = $response->getHeaderLine('Content-Type');
+            $content = $response->getBody()->getContents();
 
-                $responseContent = json_decode($response->getBody(), true);
-                $responseDecoded = base64_decode($responseContent['secretInfo']);
+            if ($statusCode === 200 && !empty($content)) {
+                if (strpos($contentType, 'application/json; charset=UTF-8') === 0) {
+                    $domain = $this->dataRepository->findByUrl($url)[0];
+                    $private_key = $domain->getPrivatekey();
 
-                openssl_private_decrypt($responseDecoded, $decrypted, $private_key);
-                $responseArray = json_decode($decrypted, true);
-                $responseData = openssl_decrypt(base64_decode($responseContent['encryptedData']), $responseArray['cipher'], $responseArray['password'], 0, base64_decode($responseArray['iv']));
+                    $responseContent = json_decode($response->getBody(), true);
+                    $responseDecoded = base64_decode($responseContent['secretInfo']);
 
-                return json_decode($responseData, true);
+                    openssl_private_decrypt($responseDecoded, $decrypted, $private_key);
+                    $responseArray = json_decode($decrypted, true);
+                    $responseData = openssl_decrypt(base64_decode($responseContent['encryptedData']), $responseArray['cipher'], $responseArray['password'], 0, base64_decode($responseArray['iv']));
+
+                    return json_decode($responseData, true);
+                }
             }
+        } catch (\Throwable $e) {
+            $this->errors[$url][] = $e;
+            $this->logger->error(
+                $url . ': ' . $e->getMessage(),
+                [
+                    'status-code' => $e->getCode(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine()
+                ]
+            );
+            return false;
         }
 
         return false;
@@ -384,14 +435,14 @@ class ObserverModuleController extends ActionController {
                 );
 
                 return;
-            } 
+            }
 
             // Extract the private key into $private_key
             openssl_pkey_export($res, $private_key);
 
             if (empty($private_key)) {
                 $this->addFlashMessage('Can not create private-key with "openssl_pkey_export" Look at readme!', '', AbstractMessage::ERROR);
-                
+
                 $this->forward(
                     'index',
                     NULL,
