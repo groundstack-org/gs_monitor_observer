@@ -5,14 +5,8 @@ use \TYPO3\CMS\Extbase\Utility\DebuggerUtility;
 use \TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
 use \TYPO3\CMS\Extbase\Annotation\Inject;
 use \TYPO3\CMS\Core\Utility\GeneralUtility;
-use \TYPO3\CMS\Core\Database\ConnectionPool;
-use \TYPO3\CMS\Core\Messaging\FlashMessage;
 use \TYPO3\CMS\Core\Messaging\AbstractMessage;
-
 use \TYPO3\CMS\Extbase\Mvc\View\ViewInterface;
-use TYPO3\CMS\Core\Database\RelationHandler;
-use TYPO3\CMS\Backend\Utility\BackendUtility;
-
 use \TYPO3\CMS\Core\Http\RequestFactory;
 
 use GroundStack\GsMonitorObserver\Domain\Repository\DataRepository;
@@ -153,9 +147,18 @@ class ObserverModuleController extends ActionController {
             if($hidden === 0) {
                 $token = $this->getJwtToken($url, $apiKey);
 
+                if($token == false) {
+                    $token = $this->getJwtToken($url, $apiKey, '/?eID=gs_monitor_provider');
+                }
+
                 if (is_string($token)) {
                     // Get info from api
                     $apiInfo = $this->sendWithJwtToken($url, $token);
+
+                    if($apiInfo == false) {
+                        // TYOP3 below verion 9 uses eID
+                        $apiInfo = $this->sendWithJwtToken($url, $token, '/?eID=gs_monitor_provider');
+                    }
 
                     if(!empty($apiInfo)) {
                         $installedVersion = $apiInfo['environment']['runtime']['framework_installed_version'];
@@ -306,8 +309,9 @@ class ObserverModuleController extends ActionController {
      * @param string $apiKey
      * @return void
      */
-    public function getJwtToken(string $url, string $apiKey) {
-        $target = $url . '/gs-monitor-api/v1/getData';
+    public function getJwtToken(string $url, string $apiKey, string $urlpräfix = '/gs-monitor-api/v1/getData') {
+        $target = $url . $urlpräfix;
+
         $additionalOptions = [
             // Additional headers for this specific request
             'headers' => [
@@ -322,10 +326,10 @@ class ObserverModuleController extends ActionController {
         // Return a PSR-7 compliant response object
         try {
             $response = $this->requestFactory->request($target, 'POST', $additionalOptions);
-            $content = $response->getBody()->getContents();
 
             if ($response->getStatusCode() === 200) {
-                if (strpos($response->getHeaderLine('Content-Type'), 'application/json; charset=UTF-8') === 0) {
+                if (strpos($response->getHeaderLine('Content-Type'), 'application/json; charset=UTF-8') === 0
+                || strpos($response->getHeaderLine('Content-Type'), 'application/json; charset=utf-8') === 0) {
                     $token = $response->getHeaderLine('Authorization');
                     if (!empty($token)) {
                         return $token;
@@ -333,6 +337,7 @@ class ObserverModuleController extends ActionController {
                 }
             }
         } catch (\Throwable $e) {
+
             $this->errors[$url][] = $e;
             $this->logger->error(
                 $url . ': ' . $e->getMessage(),
@@ -348,8 +353,8 @@ class ObserverModuleController extends ActionController {
         return false;
     }
 
-    public function sendWithJwtToken(string $url, string $jwtToken) {
-        $target = $url.'/gs-monitor-api/v1/getData';
+    public function sendWithJwtToken(string $url, string $jwtToken, string $urlpräfix = '/gs-monitor-api/v1/getData') {
+        $target = $url . $urlpräfix;
         $additionalOptions = [
             // Additional headers for this specific request
             'headers' => [
@@ -370,7 +375,8 @@ class ObserverModuleController extends ActionController {
             $content = $response->getBody()->getContents();
 
             if ($statusCode === 200 && !empty($content)) {
-                if (strpos($contentType, 'application/json; charset=UTF-8') === 0) {
+                if (strpos($contentType, 'application/json; charset=UTF-8') === 0
+                || strpos($contentType, 'application/json; charset=utf-8') === 0) {
                     $domain = $this->dataRepository->findByUrl($url)[0];
                     $private_key = $domain->getPrivatekey();
 
