@@ -24,4 +24,8 @@ call_user_func(function() {
     //         'ObserverModule' => '',
     //     ]
     // );
+
+    if (!is_array($GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['cache_monitorobserver'])) {
+        $GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['cache_monitorobserver'] = [];
+    }
 });

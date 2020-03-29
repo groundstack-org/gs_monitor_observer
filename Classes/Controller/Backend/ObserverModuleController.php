@@ -8,6 +8,7 @@ use \TYPO3\CMS\Core\Utility\GeneralUtility;
 use \TYPO3\CMS\Core\Messaging\AbstractMessage;
 use \TYPO3\CMS\Extbase\Mvc\View\ViewInterface;
 use \TYPO3\CMS\Core\Http\RequestFactory;
+use \TYPO3\CMS\Core\Cache\Frontend\FrontendInterface;
 
 use GroundStack\GsMonitorObserver\Domain\Repository\DataRepository;
 
@@ -56,6 +57,11 @@ class ObserverModuleController extends ActionController {
      */
     protected $defaultViewObjectName = \TYPO3\CMS\Backend\View\BackendTemplateView::class;
 
+    /**
+     * @var TYPO3\CMS\Core\Cache\Frontend\FrontendInterface
+     */
+    private $cache;
+
     protected $extConf;
 
     /**
@@ -77,9 +83,11 @@ class ObserverModuleController extends ActionController {
      */
     private $requestFactory;
 
-    public function __construct(RequestFactory $requestFactory) {
+    public function __construct(RequestFactory $requestFactory) { // FrontendInterface $cache // Ab TYPO3 10.1
         $this->extensionKey = 'gs_monitor_observer';
         $this->requestFactory = $requestFactory;
+        // $this->cache = $cache; // Ab TYPO3 10.1
+        $this->cache = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\Cache\\CacheManager');
     }
 
     /**
@@ -145,46 +153,54 @@ class ObserverModuleController extends ActionController {
             }
 
             if($hidden === 0) {
-                $token = $this->getJwtToken($url, $apiKey);
+                $cachedEntry = $this->getCachedMagic($value->getUid());
+                if(empty($cachedEntry)) {
+                    $token = $this->getJwtToken($url, $apiKey);
 
-                if($token == false) {
-                    $token = $this->getJwtToken($url, $apiKey, '/?eID=gs_monitor_provider');
+                    if($token == false) {
+                        $token = $this->getJwtToken($url, $apiKey, '/?eID=gs_monitor_provider');
+                    }
+
+                    if (is_string($token)) {
+                        // Get info from api
+                        $apiInfo = $this->sendWithJwtToken($url, $token);
+
+                        if($apiInfo == false) {
+                            // TYOP3 below verion 9 uses eID
+                            $apiInfo = $this->sendWithJwtToken($url, $token, '/?eID=gs_monitor_provider');
+
+                            // set cache for new entry
+                            $this->setCachedMagic($value->getUid(), $apiInfo, [$value->getUid(), $value->getPid(), 'apiInfo', 'clientData']);
+                            // get new cached entry
+                            $cachedEntry = $this->getCachedMagic($value->getUid());
+                        }
+                    }
                 }
 
-                if (is_string($token)) {
-                    // Get info from api
-                    $apiInfo = $this->sendWithJwtToken($url, $token);
+                if(!empty($cachedEntry)) {
+                    $installedVersion = $cachedEntry['environment']['runtime']['framework_installed_version'];
+                    // $installedVersionSplit = explode('.', $installedVersion);
 
-                    if($apiInfo == false) {
-                        // TYOP3 below verion 9 uses eID
-                        $apiInfo = $this->sendWithJwtToken($url, $token, '/?eID=gs_monitor_provider');
+                    // get the current/newes version of the installed version
+                    // this newestVersionData is not(!) the newest LTS version!
+                    $newestVersionData = json_decode(GeneralUtility::getURL('https://get.typo3.org/v1/api/major/'.$installedVersion[0].'/release/latest'), true);
+
+                    // check if newest verstion is higher than instelled version
+                    $cachedEntry['environment']['runtime']['newest_current_version'] = $newestVersionData['version'];
+                    $cachedEntry['environment']['runtime']['update_necessary'] = false;
+                    if (intval( str_replace('.', '', $installedVersion) ) < intval( str_replace('.', '', $newestVersionData['version']) )) {
+                        $cachedEntry['environment']['runtime']['update_necessary'] = true;
+
+                        $needsUpdateList[$url]['toVersion'] = $newestVersionData['version'];
                     }
 
-                    if(!empty($apiInfo)) {
-                        $installedVersion = $apiInfo['environment']['runtime']['framework_installed_version'];
-                        $installedVersionSplit = explode('.', $installedVersion);
-
-                        // get the current/newes version of the installed version
-                        // this newestVersionData is not(!) the newest LTS version!
-                        $newestVersionData = json_decode(GeneralUtility::getURL('https://get.typo3.org/v1/api/major/'.$installedVersion[0].'/release/latest'), true);
-
-                        // check if newest verstion is higher than instelled version
-                        $apiInfo['environment']['runtime']['newest_current_version'] = $newestVersionData['version'];
-                        $apiInfo['environment']['runtime']['update_necessary'] = false;
-                        if (intval( str_replace('.', '', $installedVersion) ) < intval( str_replace('.', '', $newestVersionData['version']) )) {
-                            $apiInfo['environment']['runtime']['update_necessary'] = true;
-
-                            $needsUpdateList[$url]['toVersion'] = $newestVersionData['version'];
-                        }
-
-                        // provide info if installed version is elts version
-                        $apiInfo['environment']['runtime']['elts'] = $newestVersionData['elts'];
-                        if ($newestVersionData['elts']) {
-                            $eltsList[$url]['installedVersion'] = $installedVersion;
-                        }
-
-                        $dataArray[$url]['apiInfo'] = $apiInfo;
+                    // provide info if installed version is elts version
+                    $cachedEntry['environment']['runtime']['elts'] = $newestVersionData['elts'];
+                    if ($newestVersionData['elts']) {
+                        $eltsList[$url]['installedVersion'] = $installedVersion;
                     }
+
+                    $dataArray[$url]['apiInfo'] = $cachedEntry;
                 }
 
                 if(!empty($this->errors[$url])) {
@@ -497,5 +513,34 @@ class ObserverModuleController extends ActionController {
             NULL,
             []
         );
+    }
+
+    /**
+     * getCachedMagic
+     *
+     * @param string $cacheIdentifier
+     * @return array
+     */
+    protected function getCachedMagic(string $cacheIdentifier): array {
+        $cacheEntry = $this->cache->getCache('cache_monitorobserver');
+        $cacheData = $cacheEntry->get($cacheIdentifier);
+        if($cacheData) {
+            return $cacheData;
+        }
+
+        return [];
+    }
+
+    /**
+     * setCachedMagic
+     *
+     * @param string $cacheIdentifier
+     * @param array $data - The data to be cached.
+     * @param array $tags - Additional tags (an array of strings) assigned to the entry. Used to remove specific cache entries.
+     * @return void
+     */
+    protected function setCachedMagic(string $cacheIdentifier, array $data, array $tags = [], int $lifetime = 86400) { // 86400 = 1 day
+        $cacheEntry = $this->cache->getCache('cache_monitorobserver');
+        $cacheEntry->set($cacheIdentifier, $data, $tags, $lifetime);
     }
 }
